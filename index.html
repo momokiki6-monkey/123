@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>小琉球海島美食指南｜海洋海龜版</title>
+  <title>小琉球全方位美食與行程指南｜海洋海龜行程版</title>
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 載入 Google Fonts -->
@@ -160,12 +160,47 @@
         <span class="text-xs sm:text-sm font-bold tracking-wider uppercase theme-header-title">XIAOLIUQIU OCEAN • TURTLE • ISLAND</span>
       </div>
       <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight theme-header-title mb-3 drop-shadow-md leading-tight">
-        小琉球海島美食指南
+        小琉球全方位美食與行程指南
       </h1>
       <p class="text-sm sm:text-base max-w-2xl mx-auto theme-header-sub font-semibold drop-shadow leading-relaxed">
-        完整收錄在地經典美食。點擊店家名稱可開啟網址或照片！
+        勾選喜歡的項目即可自動整合至「今日行程指定據點總覽」！點擊名稱可直接進行 Google 搜尋。
       </p>
     </header>
+
+    <!-- 統合的「今日行程指定據點總覽」面板 -->
+    <section class="theme-panel rounded-3xl p-4 sm:p-6 mb-8 shadow-xl space-y-4 border-2 border-amber-400/50">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 class="text-base sm:text-lg font-black theme-header-title flex items-center gap-2">
+          <span>📍</span> 今日行程指定據點總覽
+        </h2>
+        <div class="flex items-center gap-2">
+          <span id="itineraryCount" class="text-xs font-black px-3 py-1 rounded-full bg-amber-500 text-white">已選擇 0 個項目</span>
+          <button type="button" id="multiNavBtn" onclick="openMultiRouteMap()" class="hidden px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-lg hover:bg-sky-700 transition flex items-center gap-1.5">
+            <span>🗺️ 在 Google 地圖開啟所有標記據點</span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- 固定的住宿導航起點：海天一色 -->
+      <div class="bg-white/95 p-3.5 rounded-2xl border-2 border-emerald-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-800 shadow-md">
+        <div>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white mr-1.5">🏠 住宿起點</span>
+          <span class="font-black text-emerald-800 text-sm">小琉球海天一色</span>
+          <p class="text-slate-500 mt-0.5">📍 屏東縣琉球鄉（指定住宿位址）</p>
+        </div>
+        <button type="button" onclick="openCustomMap('小琉球海天一色', '屏東縣琉球鄉')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold shrink-0 hover:bg-emerald-700 transition">📍 單點查看</button>
+      </div>
+
+      <div id="itineraryList" class="flex flex-wrap gap-2 text-xs sm:text-sm text-slate-700 pt-2">
+        <p class="text-slate-400 italic">尚未勾選任何行程，請在下方卡片點選「加入今日行程」來標記您的指定據點！</p>
+      </div>
+      
+      <!-- 統合的據點清單區塊 -->
+      <div id="itineraryNavContainer" class="hidden pt-3 border-t border-white/20 space-y-2">
+        <p class="text-xs font-bold theme-header-title">📍 已排入行程的指定據點清單：</p>
+        <div id="itineraryNavList" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+    </section>
 
     <!-- 控制列：主題切換與分類 -->
     <section class="theme-panel rounded-3xl p-4 sm:p-6 mb-8 shadow-xl space-y-4">
@@ -185,7 +220,7 @@
       <!-- 搜尋與分類列 -->
       <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div class="relative w-full md:flex-1">
-          <input type="text" id="searchInput" placeholder="搜尋編號、店名或地址..." class="w-full px-4 py-2.5 rounded-2xl bg-white/95 text-slate-900 text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm" />
+          <input type="text" id="searchInput" placeholder="搜尋編號、項目名稱或地址..." class="w-full px-4 py-2.5 rounded-2xl bg-white/95 text-slate-900 text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm" />
         </div>
         
         <!-- 動態分類篩選按鈕容器 -->
@@ -195,7 +230,7 @@
 
     <!-- 統計提示 -->
     <div class="flex justify-between items-center mb-4 px-1">
-      <p id="resultCount" class="text-sm font-bold theme-header-title drop-shadow">目前顯示全部店家</p>
+      <p id="resultCount" class="text-sm font-bold theme-header-title drop-shadow">目前顯示全部項目</p>
     </div>
 
     <!-- 卡片網格 -->
@@ -204,45 +239,24 @@
     <!-- 無搜尋結果 -->
     <div id="emptyState" class="hidden text-center py-16 theme-panel rounded-3xl mt-6">
       <div class="text-5xl mb-3">🐢</div>
-      <h3 class="text-xl font-bold theme-header-title mb-2">找不到符合條件的美食店家</h3>
-      <button type="button" id="resetFilterBtn" class="px-5 py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm">顯示全部美食</button>
+      <h3 class="text-xl font-bold theme-header-title mb-2">找不到符合條件的項目</h3>
+      <button type="button" id="resetFilterBtn" class="px-5 py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm">顯示全部項目</button>
     </div>
 
     <!-- 頁尾 -->
     <footer class="mt-14 pt-6 border-t border-white/20 text-center text-xs theme-header-sub">
-      <p class="font-bold drop-shadow">🐢 小琉球海島美食指南（海洋海龜版）</p>
+      <p class="font-bold drop-shadow">🐢 小琉球全方位美食與行程指南（海洋海龜版）</p>
     </footer>
   </div>
 
-  <!-- 燈箱 1：照片預覽 -->
-  <div id="photoModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
-    <div class="bg-white text-slate-900 rounded-3xl max-w-xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-      <div class="relative w-full h-60 sm:h-72 bg-gradient-to-br from-sky-500 to-teal-500 overflow-hidden shrink-0">
-        <img id="modalFoodImg" src="" alt="店家美食照片" class="w-full h-full object-cover" />
-        <button type="button" id="closePhotoModal" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-900/75 text-white flex items-center justify-center font-bold">✕</button>
-      </div>
-      <div class="p-6 overflow-y-auto space-y-3">
-        <h3 id="photoModalTitle" class="text-2xl font-black text-slate-900"></h3>
-        <p id="modalDescription" class="text-sm text-slate-600 leading-relaxed"></p>
-        <div class="bg-slate-50 p-4 rounded-xl text-sm space-y-1.5 border">
-          <p>🕒 <span id="modalHours"></span></p>
-          <p>📞 <a id="modalPhone" href="#" class="text-sky-600 font-bold hover:underline"></a></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 燈箱 2：地圖導航 -->
-  <div id="mapModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm">
-    <div class="bg-white text-slate-900 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+  <!-- 燈箱：單點地圖檢視 -->
+  <div id="mapModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md">
+    <div class="bg-white text-slate-900 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[96vh]">
       <div class="px-6 py-4 bg-gradient-to-r from-sky-600 to-teal-600 text-white flex items-center justify-between">
-        <h3 id="mapModalTitle" class="text-lg font-black truncate"></h3>
-        <button type="button" id="closeMapModal" class="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center font-bold">✕</button>
+        <h3 id="mapModalTitle" class="text-base sm:text-lg font-black truncate"></h3>
+        <button type="button" id="closeMapModal" class="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-base hover:bg-white/30 transition">✕</button>
       </div>
-      <div class="px-6 py-3 bg-sky-50 border-b flex items-center justify-between">
-        <span id="mapModalAddress" class="font-bold text-sm text-slate-800"></span>
-      </div>
-      <div class="relative w-full h-72 bg-slate-100">
+      <div class="relative w-full h-[82vh] bg-slate-100">
         <iframe id="googleMapIframe" class="w-full h-full border-0" loading="lazy" src=""></iframe>
       </div>
     </div>
@@ -250,29 +264,36 @@
 
   <!-- JavaScript 核心邏輯 -->
   <script>
-    const STORAGE_KEY_THEME = "xiaoliuqiu_food_theme_v18";
+    const STORAGE_KEY_THEME = "xiaoliuqiu_food_theme_v37";
+    const STORAGE_KEY_FAVS = "xiaoliuqiu_itinerary_favs_v37";
 
-    const categories = ["早餐", "正餐", "咖啡/甜品", "酒吧"];
+    const categories = ["早餐", "正餐", "燒烤", "咖啡/甜品", "宵夜/酒吧", "交通選項", "景觀選項"];
 
     const foodStores = [
-      { id: "01", name: "洪媽媽早餐", category: "早餐", address: "屏東縣琉球鄉民生路28-5號", phone: "08-8614105", hours: "03:30–10:30", note: "超人氣清晨限定傳統中式早點，手工蛋餅、賓士包與古早味豆漿必點。", highlight: "清晨限定 • 在地古早味", emoji: "🥟", imageUrl: "https://www.google.com/search?q=%E6%B4%AA%E5%AA%BD%E5%AA%BD%E6%97%A9%E9%A4%90%E5%BA%97&oq=%E6%B4%AA%E5%AA%BD&gs_lcrp=EgZjaHJvbWUqBwgBEAAYgAQyBggAEEUYOTIHCAEQABiABDIHCAIQLhiABDINCAMQLhivARjHARiABDIHCAQQABiABDIHCAUQABiABDINCAYQLhivARjHARiABDIHCAcQABiABDIHCAgQABiABDIHCAkQABiABNIBCTQ2OTlqMGoxNagCCLACAQ&sourceid=chrome&source=chrome.rb&ie=UTF-8/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "02", name: "相思麵 / 在地古早味麵食", category: "正餐", address: "屏東縣琉球鄉上杉路65-1號", phone: "08-8614423", hours: "11:00–14:00、17:00–20:00", note: "柴燒肉燥香氣四溢的經典乾麵與小菜，小琉球排隊必吃的傳統麵館。", highlight: "柴燒肉燥 • 排隊名店", emoji: "🍜", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "03", name: "Mizi's House 米籽洋食", category: "正餐", address: "屏東縣琉球鄉中正路161-52號", phone: "0988-611-132", hours: "17:00–21:30", note: "結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。", highlight: "高 CP 值 • 精緻洋食", emoji: "🍝", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "04", name: "小琉球海島酒吧 BAR", category: "酒吧", address: "屏東縣琉球鄉民生路27號", phone: "08-861-1167", hours: "16:30–01:00", note: "海島夜晚微醺首選，提供特調雞尾酒與輕鬆氛圍。", highlight: "海島微醺 • 營業至凌晨", emoji: "🍸", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "05", name: "Pi Turtle 派海龜特色餐廳", category: "正餐", address: "屏東縣琉球鄉復興路1-100號", phone: "08-8612818", hours: "11:30–21:00", note: "充滿海龜海洋主題佈置的特色餐館，全日供餐。", highlight: "海龜主題 • 全日供餐", emoji: "🐢", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "06", name: "FIVE BBQ 小琉球燒烤", category: "正餐", address: "屏東縣琉球鄉中山路108-1號", phone: "0911-973-378", hours: "17:00–20:30", note: "新鮮海鮮與肉品炭火燒烤。", highlight: "LINE @5.bbq • 海島炭烤", emoji: "🔥", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "07", name: "小琉球人氣炸物/宵夜點心", category: "酒吧", address: "屏東縣琉球鄉民生路32-2號", phone: "0910-712-474", hours: "15:00–21:30", note: "現點現炸酥脆炸物點心。", highlight: "現點現炸 • 散步美食", emoji: "🍗", imageUrl: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "08", name: "小琉球特色下午茶/冰品", category: "咖啡/甜品", address: "屏東縣琉球鄉中正路267-14號", phone: "0976-181-739", hours: "10:00–20:00", note: "沁涼刨冰與海島風味甜品。", highlight: "消暑冰品 • 午後沁涼", emoji: "🍧", imageUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "09", name: "小琉球海島早餐/咖啡", category: "早餐", address: "屏東縣琉球鄉中正路168-3號", phone: "08-8614688", hours: "08:00–17:00", note: "豐盛早餐拼盤與手沖咖啡。", highlight: "悠閒早餐 • 精品咖啡", emoji: "🥐", imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "10", name: "Seaside Cafe 海邊咖啡", category: "咖啡/甜品", address: "屏東縣琉球鄉海景第一排", phone: "08-8612588", hours: "10:30–21:00", note: "坐擁無敵海景的看海咖啡廳。", highlight: "海景第一排 • 低消 NT$200", emoji: "🌊", imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "11", name: "小琉球手搖飲/海島特調", category: "咖啡/甜品", address: "屏東縣琉球鄉民生路1號", phone: "0965-105-988", hours: "11:00–17:00", note: "環島騎車途中清涼果茶。", highlight: "環島必喝 • 清爽果茶", emoji: "🧋", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "12", name: "小琉球海龜燒/特色點心", category: "咖啡/甜品", address: "屏東縣琉球鄉中山路30號", phone: "現場購買", hours: "11:00–18:00", note: "超萌海龜造型雞蛋糕與特色小點。", highlight: "超萌海龜造型 • 打卡必吃", emoji: "🧇", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "13", name: "島嶼檸檬茶咖啡餐酒館", category: "咖啡/甜品", address: "屏東縣琉球鄉三民路11-12號", phone: "0968-688892", hours: "11:00–18:00", note: "新鮮島嶼檸檬特調飲品與輕食。", highlight: "島嶼檸檬特調 • 質感餐酒館", emoji: "🍋", imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "14", name: "小琉球海景甜品/輕食", category: "咖啡/甜品", address: "屏東縣琉球鄉民族路36-17號", phone: "現場候位", hours: "10:00–17:00", note: "精緻手作甜品與輕食小店。", highlight: "手作甜品 • 輕食午茶", emoji: "🍰", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "15", name: "小琉球在地風味餐館", category: "正餐", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟", imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "16", name: "小琉球在地風味餐館", category: "正餐", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟", imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=900&q=80", url: "" }
+      { id: "01", name: "小琉球傳統早餐", category: "早餐", address: "屏東縣琉球鄉民生路28-5號", phone: "08-8614105", hours: "03:30–10:30", note: "超人氣清晨限定傳統中式早點，手工蛋餅、賓士包與古早味豆漿必點。", highlight: "清晨限定 • 在地古早味", emoji: "🥟" },
+      { id: "02", name: "相思麵 / 在地古早味麵食", category: "正餐", address: "屏東縣琉球鄉上杉路65-1號", phone: "08-8614423", hours: "11:00–14:00、17:00–20:00", note: "柴燒肉燥香氣四溢的經典乾麵與小菜，小琉球排隊必吃的傳統麵館。", highlight: "柴燒肉燥 • 排隊名店", emoji: "🍜" },
+      { id: "03", name: "Mizi's House 米籽洋食", category: "正餐", address: "屏東縣琉球鄉中正路161-52號", phone: "0988-611-132", hours: "17:00–21:30", note: "結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。", highlight: "高 CP 值 • 精緻洋食", emoji: "🍝" },
+      { id: "04", name: "小琉球海島酒吧 BAR", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路27號", phone: "08-861-1167", hours: "16:30–01:00", note: "海島夜晚微醺首選，提供特調雞尾酒與輕鬆氛圍。", highlight: "海島微醺 • 營業至凌晨", emoji: "🍸" },
+      { id: "05", name: "Pi Turtle 派海龜特色餐廳", category: "正餐", address: "屏東縣琉球鄉復興路1-100號", phone: "08-8612818", hours: "11:30–21:00", note: "充滿海龜海洋主題佈置的特色餐館，全日供餐。", highlight: "海龜主題 • 全日供餐", emoji: "🐢" },
+      { id: "06", name: "FIVE BBQ 小琉球燒烤", category: "燒烤", address: "屏東縣琉球鄉中山路108-1號", phone: "0911-973-378", hours: "17:00–20:30", note: "新鮮海鮮與肉品炭火燒烤吃到飽，氣氛熱鬧。", highlight: "海鮮肉品 • 炭火燒烤", emoji: "🔥" },
+      { id: "07", name: "小琉球原燒/海鮮炭烤餐廳", category: "燒烤", address: "屏東縣琉球鄉中山路", phone: "08-8613311", hours: "17:00–22:00", note: "道地炭火燒烤，新鮮牡蠣與豐富肉品一次滿足。", highlight: "碳烤牡蠣 • 聚餐首選", emoji: "🔥" },
+      { id: "08", name: "小琉球人氣炸物/宵夜點心", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路32-2號", phone: "0910-712-474", hours: "15:00–21:30", note: "現點現炸酥脆炸物點心。", highlight: "現點現炸 • 散步美食", emoji: "🍗" },
+      { id: "09", name: "小琉球特色下午茶/冰品", category: "咖啡/甜品", address: "屏東縣琉球鄉中正路267-14號", phone: "0976-181-739", hours: "10:00–20:00", note: "沁涼刨冰與海島風味甜品。", highlight: "消暑冰品 • 午後沁涼", emoji: "🍧" },
+      { id: "10", name: "小琉球海島早午餐/咖啡", category: "早餐", address: "屏東縣琉球鄉中正路168-3號", phone: "08-8614688", hours: "08:00–17:00", note: "豐盛早午餐拼盤與手沖咖啡。", highlight: "悠閒早午餐 • 精品咖啡", emoji: "🥐" },
+      { id: "11", name: "Seaside Cafe 海邊咖啡", category: "咖啡/甜品", address: "屏東縣琉球鄉海景第一排", phone: "08-8612588", hours: "10:30–21:00", note: "坐擁無敵海景的看海咖啡廳。", highlight: "海景第一排 • 低消 NT$200", emoji: "🌊" },
+      { id: "12", name: "小琉球手搖飲/海島特調", category: "咖啡/甜品", address: "屏東縣琉球鄉民生路1號", phone: "0965-105-988", hours: "11:00–17:00", note: "環島騎車途中清涼果茶。", highlight: "環島必喝 • 清爽果茶", emoji: "🧋" },
+      { id: "13", name: "小琉球海龜燒/特色點心", category: "咖啡/甜品", address: "屏東縣琉球鄉中山路30號", phone: "現場購買", hours: "11:00–18:00", note: "超萌海龜造型雞蛋糕與特色小點。", highlight: "超萌海龜造型 • 打卡必吃", emoji: "🧇" },
+      { id: "14", name: "島嶼檸檬茶咖啡餐酒館", category: "咖啡/甜品", address: "屏東縣琉球鄉三民路11-12號", phone: "0968-688892", hours: "11:00–18:00", note: "新鮮島嶼檸檬特調飲品與輕食。", highlight: "島嶼檸檬特調 • 質感餐酒館", emoji: "🍋" },
+      { id: "15", name: "小琉球海景甜品/輕食", category: "咖啡/甜品", address: "屏東縣琉球鄉民族路36-17號", phone: "現場候位", hours: "10:00–17:00", note: "精緻手作甜品與輕食小店。", highlight: "手作甜品 • 輕食午茶", emoji: "🍰" },
+      { id: "16", name: "小琉球在地風味餐館", category: "正餐", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟" },
+      { id: "17", name: "東港往返小琉球客船/交通", category: "交通選項", address: "屏東縣東港鎮朝隆路（東港碼頭）", phone: "08-832-5806", hours: "07:00–17:00（依船班為主）", note: "從台灣本島東港搭乘交通船前往小琉球白沙港或大福港的最主要方式。", highlight: "本島對渡 • 航程約 25-30 分鐘", emoji: "🚢" },
+      { id: "18", name: "島上機車出租 / 環島交通", category: "交通選項", address: "屏東縣琉球鄉白沙港周邊", phone: "各店家公告", hours: "08:00–18:00", note: "抵達小琉球後最便利的代步工具，環島與前往各景點必備。", highlight: "自由行必備 • 機動性高", emoji: "🛵" },
+      { id: "19", name: "花瓶岩風景區", category: "景觀選項", address: "屏東縣琉球鄉本漁路起(白沙國小旁)", phone: "全天開放", hours: "全天開放", note: "小琉球最著名的地標景觀，獨特的珊瑚礁岩與清澈見底的海水，常有海龜出沒。", highlight: "地標景觀 • 浮潛與看海龜勝地", emoji: "🪨" },
+      { id: "20", name: "美人洞風景區", category: "景觀選項", address: "屏東縣琉球鄉美人路", phone: "08-861-3051", hours: "07:30–17:30", note: "依山傍海的天然海蝕洞景觀，沿途步道視野遼闊，欣賞壯麗海岸線的好去處。", highlight: "天然海蝕洞 • 壯麗海景步道", emoji: "🌊" },
+      { id: "21", name: "厚石群礁與落日亭", category: "景觀選項", address: "屏東縣琉球鄉環島公路南段", phone: "全天開放", hours: "全天開放", note: "沿岸綿延的壯觀裙狀珊瑚礁，更是觀賞夕陽西下與夜晚星空的絕佳祕境。", highlight: "絕美夕陽 • 珊瑚礁海岸秘境", emoji: "🌅" }
     ];
 
+    let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY_FAVS)) || [];
     let currentCategory = "all";
     let searchQuery = "";
 
@@ -303,16 +324,101 @@
       });
     }
 
-    // 點擊名稱
-    window.handleNameClick = function(id) {
-      const s = foodStores.find(item => item.id === id);
-      if (!s) return;
-      if (s.url && s.url.trim() !== "") {
-        window.open(s.url.trim(), "_blank");
+    // 點擊名稱直接開啟 Google 搜尋
+    window.handleNameClick = function(name) {
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(name + " 小琉球")}`;
+      window.open(searchUrl, "_blank");
+    };
+
+    // 切換最愛狀態
+    window.toggleFavorite = function(id) {
+      const index = favorites.indexOf(id);
+      if (index > -1) {
+        favorites.splice(index, 1);
       } else {
-        openPhotoModal(id);
+        favorites.push(id);
+      }
+      localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(favorites));
+      renderCards();
+      renderItinerary();
+    };
+
+    // 開啟單點地圖燈箱
+    window.openCustomMap = function(title, address) {
+      document.getElementById("mapModalTitle").textContent = title;
+      const query = encodeURIComponent(`${title} ${address}`);
+      document.getElementById("googleMapIframe").src = `https://maps.google.com/maps?q=${query}&output=embed&z=17`;
+      const mapModal = document.getElementById("mapModal");
+      if (mapModal) {
+        mapModal.classList.remove("hidden");
+        mapModal.classList.add("flex");
       }
     };
+
+    // 開啟 Google 地圖官方多點標記檢視（直接在新分頁開啟，保證完美呈現所有紅色大頭針標記點，絕無多餘導航線）
+    window.openMultiRouteMap = function() {
+      if (favorites.length === 0) return;
+      
+      let waypoints = [{ name: "小琉球海天一色", address: "屏東縣琉球鄉" }];
+      favorites.forEach(id => {
+        const item = foodStores.find(s => s.id === id);
+        if (item) waypoints.push({ name: item.name, address: item.address });
+      });
+
+      // 使用 Google Maps 的搜尋標記網址，會直接在地圖上精準標註每一個勾選的據點紅點
+      const queryStr = waypoints.map(w => `${w.name}`).join(" ");
+      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("小琉球 " + queryStr)}` ;
+      
+      window.open(mapsUrl, "_blank");
+    };
+
+    // 渲染今日行程摘要與統一導航位址
+    function renderItinerary() {
+      const listEl = document.getElementById("itineraryList");
+      const countEl = document.getElementById("itineraryCount");
+      const navContainer = document.getElementById("itineraryNavContainer");
+      const navList = document.getElementById("itineraryNavList");
+      const multiNavBtn = document.getElementById("multiNavBtn");
+      if (!listEl || !countEl || !navContainer || !navList || !multiNavBtn) return;
+
+      countEl.textContent = `已選擇 ${favorites.length} 個項目`;
+
+      if (favorites.length === 0) {
+        listEl.innerHTML = `<p class="text-slate-400 italic">尚未勾選任何行程，請在下方卡片點選「加入今日行程」來標記您的指定據點！</p>`;
+        navContainer.classList.add("hidden");
+        navList.innerHTML = "";
+        multiNavBtn.classList.add("hidden");
+        return;
+      }
+
+      multiNavBtn.classList.remove("hidden");
+
+      let tagsHtml = "";
+      let navHtml = "";
+
+      favorites.forEach(id => {
+        const item = foodStores.find(s => s.id === id);
+        if (item) {
+          tagsHtml += `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm">
+            <span>${item.emoji || '📌'}</span>
+            <span>${item.name}</span>
+            <button type="button" onclick="toggleFavorite('${item.id}')" class="ml-1 hover:text-rose-200 font-bold">×</button>
+          </span>`;
+
+          navHtml += `<div class="bg-white/90 p-3 rounded-xl border flex items-center justify-between text-xs text-slate-800 shadow-sm">
+            <div>
+              <p class="font-black text-sky-700">${item.emoji || '📌'} ${item.name}</p>
+              <p class="text-slate-500 truncate max-w-[220px] sm:max-w-xs">📍 ${item.address}</p>
+            </div>
+            <button type="button" onclick="openCustomMap('${item.name}', '${item.address}')" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white font-bold shrink-0 hover:bg-sky-700 transition">📍 查看標記</button>
+          </div>`;
+        }
+      });
+
+      listEl.innerHTML = tagsHtml;
+      navList.innerHTML = navHtml;
+      navContainer.classList.remove("hidden");
+    }
 
     // 渲染卡片
     function renderCards() {
@@ -327,36 +433,41 @@
       });
 
       const countEl = document.getElementById("resultCount");
-      if (countEl) countEl.textContent = `目前顯示 ${filtered.length} / ${foodStores.length} 間小琉球美食店家`;
+      if (countEl) countEl.textContent = `目前顯示 ${filtered.length} / ${foodStores.length} 個項目`;
       
       const emptyEl = document.getElementById("emptyState");
       if (emptyEl) emptyEl.classList.toggle("hidden", filtered.length > 0);
 
-      grid.innerHTML = filtered.map(s => `
-        <article class="food-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between shadow-lg">
-          <div>
-            <div class="flex items-center justify-between mb-3">
-              <span class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white">NO.${s.id}</span>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">${s.emoji || '🍽️'} ${s.category}</span>
-            </div>
-            
-            <h3 class="text-lg font-black mb-2 cursor-pointer hover:underline text-sky-700 dark:text-sky-300" onclick="handleNameClick('${s.id}')">
-              ${s.name} ${s.url ? '🔗' : ''}
-            </h3>
-            
-            <div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden mb-3 shadow-md cursor-pointer bg-slate-100" onclick="openPhotoModal('${s.id}')">
-              <img src="${s.imageUrl || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80'}" alt="${s.name}" class="w-full h-full object-cover hover:scale-105 transition duration-300" />
-            </div>
+      grid.innerHTML = filtered.map(s => {
+        const isFav = favorites.includes(s.id);
+        return `
+          <article class="food-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between shadow-lg">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white">NO.${s.id}</span>
+                  <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">${s.emoji || '🍽️'} ${s.category}</span>
+                </div>
+                <button type="button" onclick="toggleFavorite('${s.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'}">
+                  <span>${isFav ? '❤️ 已排入行程' : '🤍 加入今日行程'}</span>
+                </button>
+              </div>
+              
+              <h3 class="text-lg font-black mb-2 cursor-pointer hover:underline text-sky-700 dark:text-sky-300" onclick="handleNameClick('${s.name}')">
+                ${s.name} 🔍
+              </h3>
 
-            <p class="text-xs font-bold mb-2 opacity-95">✨ ${s.highlight || '小琉球推薦'}</p>
-            <p class="text-sm opacity-90 mb-4">${s.note}</p>
-          </div>
-          <div class="pt-3 border-t text-xs space-y-1">
-            <p class="opacity-80">🕒 ${s.hours || '依店家公告'}</p>
-            <p class="text-emerald-700 dark:text-emerald-400 font-bold cursor-pointer hover:underline" onclick="openMapModal('${s.id}')">📍 ${s.address}</p>
-          </div>
-        </article>
-      `).join("");
+              <p class="text-xs font-bold mb-2 opacity-95">✨ ${s.highlight || '小琉球推薦'}</p>
+              <p class="text-sm opacity-90 mb-4">${s.note}</p>
+            </div>
+            <div class="pt-3 border-t text-xs space-y-1">
+              <p class="opacity-80">🕒 ${s.hours || '依公告為主'}</p>
+              <p class="opacity-80">📞 <a href="tel:${s.phone}" class="text-sky-600 font-bold hover:underline">${s.phone || '依公告為主'}</a></p>
+              <p class="text-emerald-700 dark:text-emerald-400 font-bold cursor-pointer hover:underline" onclick="openCustomMap('${s.name}', '${s.address}')">📍 ${s.address}</p>
+            </div>
+          </article>
+        `;
+      }).join("");
     }
 
     // 主題切換
@@ -379,39 +490,8 @@
     const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
     if (savedTheme) applyTheme(savedTheme);
 
-    // 燈箱控制
-    window.openPhotoModal = function(id) {
-      const s = foodStores.find(item => item.id === id);
-      if (!s) return;
-      document.getElementById("photoModalTitle").textContent = s.name;
-      document.getElementById("modalDescription").textContent = s.note;
-      document.getElementById("modalHours").textContent = s.hours;
-      document.getElementById("modalPhone").textContent = s.phone;
-      document.getElementById("modalPhone").href = `tel:${s.phone}`;
-      document.getElementById("modalFoodImg").src = s.imageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80";
-      const photoModal = document.getElementById("photoModal");
-      if (photoModal) {
-        photoModal.classList.remove("hidden");
-        photoModal.classList.add("flex");
-      }
-    };
-
-    window.openMapModal = function(id) {
-      const s = foodStores.find(item => item.id === id);
-      if (!s) return;
-      document.getElementById("mapModalTitle").textContent = s.name;
-      document.getElementById("mapModalAddress").textContent = s.address;
-      document.getElementById("googleMapIframe").src = `https://maps.google.com/maps?q=${encodeURIComponent(s.address)}&output=embed`;
-      const mapModal = document.getElementById("mapModal");
-      if (mapModal) {
-        mapModal.classList.remove("hidden");
-        mapModal.classList.add("flex");
-      }
-    };
-
-    const closePhoto = document.getElementById("closePhotoModal");
+    // 關閉地圖燈箱
     const closeMap = document.getElementById("closeMapModal");
-    if (closePhoto) closePhoto.onclick = () => document.getElementById("photoModal").classList.add("hidden");
     if (closeMap) closeMap.onclick = () => document.getElementById("mapModal").classList.add("hidden");
 
     const searchInput = document.getElementById("searchInput");
@@ -436,6 +516,7 @@
     // 初始化
     renderCategories();
     renderCards();
+    renderItinerary();
   </script>
 </body>
 </html>
