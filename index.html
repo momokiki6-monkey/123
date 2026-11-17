@@ -20,58 +20,69 @@
 
     body {
       font-family: 'Inter', 'Noto Sans TC', sans-serif;
-      transition: background 0.5s ease, color 0.4s ease;
+      transition: background 0.8s ease, color 0.4s ease;
       min-height: 100vh;
       overflow-x: hidden;
+      position: relative;
     }
 
-    /* 五種海洋海龜主題背景變數 */
+    /* 依照主題切換真實的海洋與沙灘背景圖 */
     body[data-theme="ocean-blue"] {
-      --bg-style: linear-gradient(135deg, #0284c7 0%, #0369a1 45%, #0f172a 100%);
-      --card-bg: rgba(255, 255, 255, 0.94);
-      --card-border: rgba(186, 230, 253, 0.85);
+      background: linear-gradient(rgba(2, 132, 199, 0.5), rgba(15, 23, 42, 0.8)), 
+                  url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
+      --card-bg: rgba(255, 255, 255, 0.95);
+      --card-border: rgba(186, 230, 253, 0.9);
       --text-primary: #0f172a;
       --header-text: #ffffff;
       --header-sub: #bae6fd;
-      --panel-bg: rgba(15, 23, 42, 0.55);
+      --panel-bg: rgba(15, 23, 42, 0.6);
       --panel-border: rgba(255, 255, 255, 0.25);
     }
 
     body[data-theme="sunny-beach"] {
-      --bg-style: linear-gradient(135deg, #fef3c7 0%, #fde68a 35%, #bae6fd 75%, #38bdf8 100%);
+      background: linear-gradient(rgba(245, 158, 11, 0.3), rgba(2, 132, 199, 0.6)), 
+                  url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
       --card-bg: rgba(255, 255, 255, 0.96);
       --card-border: rgba(253, 224, 71, 0.8);
       --text-primary: #1e293b;
       --header-text: #0f172a;
       --header-sub: #1e3a8a;
-      --panel-bg: rgba(255, 255, 255, 0.78);
+      --panel-bg: rgba(255, 255, 255, 0.82);
       --panel-border: rgba(217, 119, 6, 0.3);
     }
 
     body[data-theme="deep-starry"] {
-      --bg-style: radial-gradient(circle at top right, #1e1b4b 0%, #0f172a 55%, #020617 100%);
-      --card-bg: rgba(30, 41, 59, 0.92);
+      background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.95)), 
+                  url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
+      --card-bg: rgba(30, 41, 59, 0.93);
       --card-border: rgba(56, 189, 248, 0.35);
       --text-primary: #f8fafc;
       --header-text: #f8fafc;
       --header-sub: #7dd3fc;
-      --panel-bg: rgba(30, 41, 59, 0.75);
+      --panel-bg: rgba(30, 41, 59, 0.78);
       --panel-border: rgba(56, 189, 248, 0.3);
     }
 
     body[data-theme="mint-breeze"] {
-      --bg-style: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 45%, #a7f3d0 100%);
+      background: linear-gradient(rgba(13, 148, 136, 0.45), rgba(6, 78, 59, 0.7)), 
+                  url('https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
       --card-bg: rgba(255, 255, 255, 0.96);
       --card-border: rgba(45, 212, 191, 0.55);
       --text-primary: #064e3b;
-      --header-text: #064e3b;
-      --header-sub: #0f766e;
-      --panel-bg: rgba(255, 255, 255, 0.8);
-      --panel-border: rgba(13, 148, 136, 0.3);
+      --header-text: #ffffff;
+      --header-sub: #99f6e4;
+      --panel-bg: rgba(6, 78, 59, 0.65);
+      --panel-border: rgba(45, 212, 191, 0.4);
     }
 
     body[data-theme="warm-ivory"] {
-      --bg-style: linear-gradient(180deg, #faf8f5 0%, #f3efe6 100%);
+      background: linear-gradient(rgba(243, 239, 230, 0.85), rgba(230, 220, 205, 0.95)), 
+                  url('https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+      background-size: cover;
       --card-bg: #ffffff;
       --card-border: #e5dec9;
       --text-primary: #292524;
@@ -79,11 +90,6 @@
       --header-sub: #57534e;
       --panel-bg: rgba(255, 255, 255, 0.9);
       --panel-border: #d6d3d1;
-    }
-
-    body {
-      background: var(--bg-style);
-      color: var(--text-primary);
     }
 
     .food-card {
@@ -95,7 +101,7 @@
 
     .food-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.25);
     }
 
     .theme-header-title { color: var(--header-text); }
@@ -106,18 +112,41 @@
       backdrop-filter: blur(12px);
     }
 
-    @keyframes floatTurtle {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-8px) rotate(3deg); }
+    @keyframes swimTurtle1 {
+      0% { transform: translate(-120px, 60vh) rotate(15deg) scale(0.8); opacity: 0; }
+      20% { opacity: 0.25; }
+      80% { opacity: 0.25; }
+      100% { transform: translate(110vw, 15vh) rotate(-15deg) scale(1); opacity: 0; }
     }
-    .turtle-float { animation: floatTurtle 5s ease-in-out infinite; }
+
+    @keyframes swimTurtle2 {
+      0% { transform: translate(110vw, 75vh) rotate(-20deg) scale(0.85); opacity: 0; }
+      20% { opacity: 0.2; }
+      80% { opacity: 0.2; }
+      100% { transform: translate(-120px, 25vh) rotate(20deg) scale(0.75); opacity: 0; }
+    }
+
+    .turtle-swimming-1 {
+      position: absolute;
+      animation: swimTurtle1 26s linear infinite;
+      pointer-events: none;
+    }
+
+    .turtle-swimming-2 {
+      position: absolute;
+      animation: swimTurtle2 32s linear infinite;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body data-theme="ocean-blue" class="antialiased selection:bg-sky-400 selection:text-white">
 
-  <!-- 背景裝飾海龜 -->
-  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-15" aria-hidden="true">
-    <svg class="w-48 h-48 absolute top-10 right-6 turtle-float text-current" viewBox="0 0 120 120" fill="currentColor">
+  <!-- 背景生動海龜游動層 -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+    <svg class="w-36 h-36 turtle-swimming-1 text-sky-200 opacity-25" viewBox="0 0 120 120" fill="currentColor">
+      <path d="M60 22c-16 0-28 14-28 32s12 34 28 34 28-16 28-34-12-32-28-32zm0 8c11 0 20 10 20 24s-9 26-20 26-20-12-20-26 9-24 20-24z"/>
+    </svg>
+    <svg class="w-28 h-28 turtle-swimming-2 text-teal-200 opacity-20" viewBox="0 0 120 120" fill="currentColor" style="animation-delay: -13s;">
       <path d="M60 22c-16 0-28 14-28 32s12 34 28 34 28-16 28-34-12-32-28-32zm0 8c11 0 20 10 20 24s-9 26-20 26-20-12-20-26 9-24 20-24z"/>
     </svg>
   </div>
@@ -126,15 +155,15 @@
 
     <!-- 頁首 -->
     <header class="text-center mb-8">
-      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 mb-4">
+      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 mb-4 shadow-sm">
         <span class="text-xl">🐢</span>
         <span class="text-xs sm:text-sm font-bold tracking-wider uppercase theme-header-title">XIAOLIUQIU OCEAN • TURTLE • ISLAND</span>
       </div>
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight theme-header-title mb-3 leading-tight">
+      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight theme-header-title mb-3 drop-shadow-md leading-tight">
         小琉球海島美食指南
       </h1>
-      <p class="text-sm sm:text-base max-w-2xl mx-auto theme-header-sub font-medium leading-relaxed">
-        完整收錄 01–15 號在地經典美食。點擊<strong class="underline">店家名稱</strong>可前往指定網址（若未設定則開啟照片大圖）！
+      <p class="text-sm sm:text-base max-w-2xl mx-auto theme-header-sub font-semibold drop-shadow leading-relaxed">
+        完整收錄在地經典美食。點擊分類旁的按鈕可修改分類，點擊店家名稱可開啟網址或照片！
       </p>
     </header>
 
@@ -142,7 +171,7 @@
     <section class="theme-panel rounded-3xl p-4 sm:p-6 mb-8 shadow-xl space-y-4">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-white/20">
         <div>
-          <h2 class="text-sm sm:text-base font-bold theme-header-title">🎨 選擇背景氛圍主題</h2>
+          <h2 class="text-sm sm:text-base font-bold theme-header-title">選擇背景氛圍主題</h2>
         </div>
         <div class="flex flex-wrap gap-2" id="themeSelector">
           <button type="button" data-theme-btn="ocean-blue" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow">🌊 湛藍海洋</button>
@@ -163,11 +192,16 @@
         <div class="flex flex-wrap gap-2 items-center" id="categoryFilterContainer"></div>
       </div>
 
-      <!-- 新增與還原按鈕 -->
+      <!-- 新增項目、新增分類與還原按鈕 -->
       <div class="pt-3 border-t border-white/20 flex flex-wrap items-center justify-between gap-3">
-        <button type="button" id="openAddModalBtn" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-sm shadow-lg transition flex items-center gap-2">
-          <span>＋</span> 新增美食項目
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" id="openAddModalBtn" class="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-sm shadow-lg transition flex items-center gap-2">
+            <span>＋</span> 新增美食項目
+          </button>
+          <button type="button" id="openAddCatBtn" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 text-white font-black text-sm shadow-lg transition flex items-center gap-2">
+            <span>＋</span> 新增分類
+          </button>
+        </div>
         <button type="button" id="restoreDefaultBtn" class="px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 border border-white/30 text-xs font-bold theme-header-title transition">
           ↺ 恢復預設 15 間與分類
         </button>
@@ -176,7 +210,7 @@
 
     <!-- 統計提示 -->
     <div class="flex justify-between items-center mb-4 px-1">
-      <p id="resultCount" class="text-sm font-bold theme-header-title">目前顯示全部店家</p>
+      <p id="resultCount" class="text-sm font-bold theme-header-title drop-shadow">目前顯示全部店家</p>
     </div>
 
     <!-- 卡片網格 -->
@@ -191,7 +225,7 @@
 
     <!-- 頁尾 -->
     <footer class="mt-14 pt-6 border-t border-white/20 text-center text-xs theme-header-sub">
-      <p class="font-bold">🐢 小琉球海島美食指南（海洋海龜版）</p>
+      <p class="font-bold drop-shadow">🐢 小琉球海島美食指南（海洋海龜版）</p>
     </footer>
   </div>
 
@@ -264,50 +298,64 @@
     </div>
   </div>
 
-  <!-- JavaScript 完整互動邏輯 -->
+  <!-- JavaScript 完整互動與權限邏輯 -->
   <script>
-    const STORAGE_KEY_STORES = "xiaoliuqiu_food_stores_v10";
-    const STORAGE_KEY_THEME = "xiaoliuqiu_food_theme_v10";
-    const STORAGE_KEY_CATS = "xiaoliuqiu_food_cats_v10";
+    const STORAGE_KEY_STORES = "xiaoliuqiu_food_stores_v18";
+    const STORAGE_KEY_THEME = "xiaoliuqiu_food_theme_v18";
+    const STORAGE_KEY_CATS = "xiaoliuqiu_food_cats_v18";
+    const REQUIRED_PASSWORD = "3701";
 
-    const defaultCategories = ["🌅 早午餐", "🍽️ 正餐/燒烤", "🍧 咖啡/甜品", "🍹 宵夜/酒吧"];
+    const defaultCategories = ["早午餐", "正餐/燒烤", "咖啡/甜品", "宵夜/酒吧"];
     let categories = JSON.parse(localStorage.getItem(STORAGE_KEY_CATS)) || defaultCategories;
 
     const defaultFoodStores = [
-      { id: "01", name: "小琉球傳統早餐", category: "🌅 早午餐", address: "屏東縣琉球鄉民生路28-5號", phone: "08-8614105", hours: "03:30–10:30", note: "超人氣清晨限定傳統中式早點，手工蛋餅、賓士包與古早味豆漿必點。", highlight: "清晨限定 • 在地古早味", emoji: "🥟", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "02", name: "相思麵 / 在地古早味麵食", category: "🍽️ 正餐/燒烤", address: "屏東縣琉球鄉上杉路65-1號", phone: "08-8614423", hours: "11:00–14:00、17:00–20:00", note: "柴燒肉燥香氣四溢的經典乾麵與小菜，小琉球排隊必吃的傳統麵館。", highlight: "柴燒肉燥 • 排隊名店", emoji: "🍜", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "03", name: "Mizi's House 米籽洋食", category: "🍽️ 正餐/燒烤", address: "屏東縣琉球鄉中正路161-52號", phone: "0988-611-132", hours: "17:00–21:30", note: "結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。", highlight: "高 CP 值 • 精緻洋食", emoji: "🍝", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "04", name: "小琉球海島酒吧 BAR", category: "🍹 宵夜/酒吧", address: "屏東縣琉球鄉民生路27號", phone: "08-861-1167", hours: "16:30–01:00", note: "海島夜晚微醺首選，提供特調雞尾酒與輕鬆氛圍。", highlight: "海島微醺 • 營業至凌晨", emoji: "🍸", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "05", name: "Pi Turtle 派海龜特色餐廳", category: "🍽️ 正餐/燒烤", address: "屏東縣琉球鄉復興路1-100號", phone: "08-8612818", hours: "11:30–21:00", note: "充滿海龜海洋主題佈置的特色餐館，全日供餐。", highlight: "海龜主題 • 全日供餐", emoji: "🐢", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "06", name: "FIVE BBQ 小琉球燒烤", category: "🍽️ 正餐/燒烤", address: "屏東縣琉球鄉中山路108-1號", phone: "0911-973-378", hours: "17:00–20:30", note: "新鮮海鮮與肉品炭火燒烤。", highlight: "LINE @5.bbq • 海島炭烤", emoji: "🔥", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "07", name: "小琉球人氣炸物/宵夜點心", category: "🍹 宵夜/酒吧", address: "屏東縣琉球鄉民生路32-2號", phone: "0910-712-474", hours: "15:00–21:30", note: "現點現炸酥脆炸物點心。", highlight: "現點現炸 • 散步美食", emoji: "🍗", imageUrl: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "08", name: "小琉球特色下午茶/冰品", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉中正路267-14號", phone: "0976-181-739", hours: "10:00–20:00", note: "沁涼刨冰與海島風味甜品。", highlight: "消暑冰品 • 午後沁涼", emoji: "🍧", imageUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "09", name: "小琉球海島早午餐/咖啡", category: "🌅 早午餐", address: "屏東縣琉球鄉中正路168-3號", phone: "08-8614688", hours: "08:00–17:00", note: "豐盛早午餐拼盤與手沖咖啡。", highlight: "悠閒早午餐 • 精品咖啡", emoji: "🥐", imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "10", name: "Seaside Cafe 海邊咖啡", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉海景第一排", phone: "08-8612588", hours: "10:30–21:00", note: "坐擁無敵海景的看海咖啡廳。", highlight: "海景第一排 • 低消 NT$200", emoji: "🌊", imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "11", name: "小琉球手搖飲/海島特調", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉民生路1號", phone: "0965-105-988", hours: "11:00–17:00", note: "環島騎車途中清涼果茶。", highlight: "環島必喝 • 清爽果茶", emoji: "🧋", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "12", name: "小琉球海龜燒/特色點心", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉中山路30號", phone: "現場購買", hours: "11:00–18:00", note: "超萌海龜造型雞蛋糕與特色小點。", highlight: "超萌海龜造型 • 打卡必吃", emoji: "🧇", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "13", name: "島嶼檸檬茶咖啡餐酒館", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉三民路11-12號", phone: "0968-688892", hours: "11:00–18:00", note: "新鮮島嶼檸檬特調飲品與輕食。", highlight: "島嶼檸檬特調 • 質感餐酒館", emoji: "🍋", imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "14", name: "小琉球海景甜品/輕食", category: "🍧 咖啡/甜品", address: "屏東縣琉球鄉民族路36-17號", phone: "現場候位", hours: "10:00–17:00", note: "精緻手作甜品與輕食小店。", highlight: "手作甜品 • 輕食午茶", emoji: "🍰", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=80", url: "" },
-      { id: "15", name: "小琉球在地風味餐館", category: "🍽️ 正餐/燒烤", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟", imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=900&q=80", url: "" }
+      { id: "01", name: "小琉球傳統早餐", category: "早午餐", address: "屏東縣琉球鄉民生路28-5號", phone: "08-8614105", hours: "03:30–10:30", note: "超人氣清晨限定傳統中式早點，手工蛋餅、賓士包與古早味豆漿必點。", highlight: "清晨限定 • 在地古早味", emoji: "🥟", imageUrl: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "02", name: "相思麵 / 在地古早味麵食", category: "正餐/燒烤", address: "屏東縣琉球鄉上杉路65-1號", phone: "08-8614423", hours: "11:00–14:00、17:00–20:00", note: "柴燒肉燥香氣四溢的經典乾麵與小菜，小琉球排隊必吃的傳統麵館。", highlight: "柴燒肉燥 • 排隊名店", emoji: "🍜", imageUrl: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "03", name: "Mizi's House 米籽洋食", category: "正餐/燒烤", address: "屏東縣琉球鄉中正路161-52號", phone: "0988-611-132", hours: "17:00–21:30", note: "結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。", highlight: "高 CP 值 • 精緻洋食", emoji: "🍝", imageUrl: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "04", name: "小琉球海島酒吧 BAR", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路27號", phone: "08-861-1167", hours: "16:30–01:00", note: "海島夜晚微醺首選，提供特調雞尾酒與輕鬆氛圍。", highlight: "海島微醺 • 營業至凌晨", emoji: "🍸", imageUrl: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "05", name: "Pi Turtle 派海龜特色餐廳", category: "正餐/燒烤", address: "屏東縣琉球鄉復興路1-100號", phone: "08-8612818", hours: "11:30–21:00", note: "充滿海龜海洋主題佈置的特色餐館，全日供餐。", highlight: "海龜主題 • 全日供餐", emoji: "🐢", imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "06", name: "FIVE BBQ 小琉球燒烤", category: "正餐/燒烤", address: "屏東縣琉球鄉中山路108-1號", phone: "0911-973-378", hours: "17:00–20:30", note: "新鮮海鮮與肉品炭火燒烤。", highlight: "LINE @5.bbq • 海島炭烤", emoji: "🔥", imageUrl: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "07", name: "小琉球人氣炸物/宵夜點心", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路32-2號", phone: "0910-712-474", hours: "15:00–21:30", note: "現點現炸酥脆炸物點心。", highlight: "現點現炸 • 散步美食", emoji: "🍗", imageUrl: "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "08", name: "小琉球特色下午茶/冰品", category: "咖啡/甜品", address: "屏東縣琉球鄉中正路267-14號", phone: "0976-181-739", hours: "10:00–20:00", note: "沁涼刨冰與海島風味甜品。", highlight: "消暑冰品 • 午後沁涼", emoji: "🍧", imageUrl: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "09", name: "小琉球海島早午餐/咖啡", category: "早午餐", address: "屏東縣琉球鄉中正路168-3號", phone: "08-8614688", hours: "08:00–17:00", note: "豐盛早午餐拼盤與手沖咖啡。", highlight: "悠閒早午餐 • 精品咖啡", emoji: "🥐", imageUrl: "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "10", name: "Seaside Cafe 海邊咖啡", category: "咖啡/甜品", address: "屏東縣琉球鄉海景第一排", phone: "08-8612588", hours: "10:30–21:00", note: "坐擁無敵海景的看海咖啡廳。", highlight: "海景第一排 • 低消 NT$200", emoji: "🌊", imageUrl: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "11", name: "小琉球手搖飲/海島特調", category: "咖啡/甜品", address: "屏東縣琉球鄉民生路1號", phone: "0965-105-988", hours: "11:00–17:00", note: "環島騎車途中清涼果茶。", highlight: "環島必喝 • 清爽果茶", emoji: "🧋", imageUrl: "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "12", name: "小琉球海龜燒/特色點心", category: "咖啡/甜品", address: "屏東縣琉球鄉中山路30號", phone: "現場購買", hours: "11:00–18:00", note: "超萌海龜造型雞蛋糕與特色小點。", highlight: "超萌海龜造型 • 打卡必吃", emoji: "🧇", imageUrl: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "13", name: "島嶼檸檬茶咖啡餐酒館", category: "咖啡/甜品", address: "屏東縣琉球鄉三民路11-12號", phone: "0968-688892", hours: "11:00–18:00", note: "新鮮島嶼檸檬特調飲品與輕食。", highlight: "島嶼檸檬特調 • 質感餐酒館", emoji: "🍋", imageUrl: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "14", name: "小琉球海景甜品/輕食", category: "咖啡/甜品", address: "屏東縣琉球鄉民族路36-17號", phone: "現場候位", hours: "10:00–17:00", note: "精緻手作甜品與輕食小店。", highlight: "手作甜品 • 輕食午茶", emoji: "🍰", imageUrl: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=900&q=80", url: "" },
+      { id: "15", name: "小琉球在地風味餐館", category: "正餐/燒烤", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟", imageUrl: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&w=900&q=80", url: "" }
     ];
 
     let foodStores = JSON.parse(localStorage.getItem(STORAGE_KEY_STORES)) || defaultFoodStores;
     let currentCategory = "all";
     let searchQuery = "";
 
-    // 渲染動態分類按鈕
+    // 權限檢查（密碼 3701）
+    function checkPermission() {
+      const pwd = prompt("請輸入權限密碼：");
+      if (pwd === null) return false;
+      if (pwd.trim() === REQUIRED_PASSWORD) {
+        return true;
+      } else {
+        alert("密碼錯誤！");
+        return false;
+      }
+    }
+
+    // 渲染分類按鈕
     function renderCategories() {
       const container = document.getElementById("categoryFilterContainer");
       const selectElem = document.getElementById("inputStoreCategory");
+      if (!container || !selectElem) return;
 
-      let html = `<button type="button" data-cat="all" class="cat-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold ${currentCategory === 'all' ? 'bg-sky-500 text-white' : 'bg-white/85 text-slate-700'} shadow-sm">全部 (${foodStores.length})</button>`;
+      let html = `<button type="button" data-cat="all" class="cat-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold ${currentCategory === 'all' ? 'bg-sky-500 text-white shadow' : 'bg-white/85 text-slate-700'} shadow-sm">全部 (${foodStores.length})</button>`;
 
       categories.forEach((cat, index) => {
         const isActive = currentCategory === cat;
         html += `
-          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold ${isActive ? 'bg-sky-500 text-white shadow-sm' : 'bg-white/85 text-slate-700'}">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold ${isActive ? 'bg-sky-500 text-white shadow' : 'bg-white/85 text-slate-700'}">
             <button type="button" data-cat="${cat}" class="cat-text-btn hover:underline">${cat}</button>
-            <button type="button" onclick="editCategoryName(${index})" class="text-[10px] opacity-75 hover:opacity-100 px-1.5 py-0.5 rounded bg-black/10" title="修改分類名稱">✏️ 改名</button>
+            <button type="button" onclick="requestEditCategory(${index})" class="text-[10px] opacity-75 hover:opacity-100 px-1 py-0.5 rounded bg-black/10" title="修改分類名稱">✏️ 改名</button>
           </div>
         `;
       });
@@ -323,14 +371,41 @@
         };
       });
 
-      container.querySelector('[data-cat="all"]').onclick = () => {
-        currentCategory = "all";
+      const allBtn = container.querySelector('[data-cat="all"]');
+      if (allBtn) {
+        allBtn.onclick = () => {
+          currentCategory = "all";
+          renderCategories();
+          renderCards();
+        };
+      }
+    }
+
+    // 新增分類（需密碼 3701）
+    const addCatBtn = document.getElementById("openAddCatBtn");
+    if (addCatBtn) {
+      addCatBtn.onclick = () => {
+        if (!checkPermission()) return;
+        const newCatName = prompt("請輸入要新增的分類名稱：");
+        if (!newCatName || !newCatName.trim()) return;
+        const trimmed = newCatName.trim();
+
+        if (categories.includes(trimmed)) {
+          alert("此分類名稱已存在！");
+          return;
+        }
+
+        categories.push(trimmed);
+        localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(categories));
         renderCategories();
-        renderCards();
+        alert(`✅ 成功新增分類：${trimmed}`);
       };
     }
 
-    window.editCategoryName = function(index) {
+    // 修改分類名稱（需密碼 3701）
+    window.requestEditCategory = function(index) {
+      if (!checkPermission()) return;
+
       const oldName = categories[index];
       const newName = prompt(`請輸入新的分類名稱（原名稱：${oldName}）：`, oldName);
       if (!newName || !newName.trim()) return;
@@ -355,7 +430,7 @@
       renderCards();
     };
 
-    // 點擊名稱後的處理邏輯（有網址開網址，沒網址開圖片燈箱）
+    // 點擊名稱
     window.handleNameClick = function(id) {
       const s = foodStores.find(item => item.id === id);
       if (!s) return;
@@ -369,6 +444,8 @@
     // 渲染卡片
     function renderCards() {
       const grid = document.getElementById("foodGrid");
+      if (!grid) return;
+
       const filtered = foodStores.filter(s => {
         const matchCat = currentCategory === "all" || s.category === currentCategory;
         const q = searchQuery.toLowerCase();
@@ -376,8 +453,11 @@
         return matchCat && matchQuery;
       });
 
-      document.getElementById("resultCount").textContent = `目前顯示 ${filtered.length} / ${foodStores.length} 間小琉球美食店家`;
-      document.getElementById("emptyState").classList.toggle("hidden", filtered.length > 0);
+      const countEl = document.getElementById("resultCount");
+      if (countEl) countEl.textContent = `目前顯示 ${filtered.length} / ${foodStores.length} 間小琉球美食店家`;
+      
+      const emptyEl = document.getElementById("emptyState");
+      if (emptyEl) emptyEl.classList.toggle("hidden", filtered.length > 0);
 
       grid.innerHTML = filtered.map(s => `
         <article class="food-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between shadow-lg">
@@ -385,25 +465,23 @@
             <div class="flex items-center justify-between mb-3">
               <span class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white">NO.${s.id}</span>
               <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">${s.emoji || '🍽️'} ${s.category}</span>
-              <button type="button" onclick="openEditModal('${s.id}')" class="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs font-bold">✏️ 編輯</button>
+              <button type="button" onclick="requestOpenEdit('${s.id}')" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-lg text-xs font-bold shadow-sm">✏️ 編輯</button>
             </div>
             
-            <!-- 點擊名稱：有網址開網址，沒網址開照片燈箱 -->
-            <h3 class="text-lg font-black mb-2 cursor-pointer hover:underline text-sky-700 dark:text-sky-400" onclick="handleNameClick('${s.id}')">
+            <h3 class="text-lg font-black mb-2 cursor-pointer hover:underline text-sky-700 dark:text-sky-300" onclick="handleNameClick('${s.id}')">
               ${s.name} ${s.url ? '🔗' : ''}
             </h3>
             
-            <!-- 名稱下方照片 -->
             <div class="w-full h-40 sm:h-44 rounded-2xl overflow-hidden mb-3 shadow-md cursor-pointer bg-slate-100" onclick="openPhotoModal('${s.id}')">
               <img src="${s.imageUrl || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80'}" alt="${s.name}" class="w-full h-full object-cover hover:scale-105 transition duration-300" />
             </div>
 
-            <p class="text-xs font-bold mb-2 opacity-90">✨ ${s.highlight || '小琉球推薦'}</p>
+            <p class="text-xs font-bold mb-2 opacity-95">✨ ${s.highlight || '小琉球推薦'}</p>
             <p class="text-sm opacity-90 mb-4">${s.note}</p>
           </div>
           <div class="pt-3 border-t text-xs space-y-1">
             <p class="opacity-80">🕒 ${s.hours || '依店家公告'}</p>
-            <p class="text-emerald-700 font-bold cursor-pointer hover:underline" onclick="openMapModal('${s.id}')">📍 ${s.address}</p>
+            <p class="text-emerald-700 dark:text-emerald-400 font-bold cursor-pointer hover:underline" onclick="openMapModal('${s.id}')">📍 ${s.address}</p>
           </div>
         </article>
       `).join("");
@@ -414,9 +492,9 @@
     function applyTheme(themeName) {
       document.body.setAttribute("data-theme", themeName);
       themeButtons.forEach(btn => {
-        btn.classList.remove("ring-2", "ring-white", "scale-105");
+        btn.classList.remove("ring-2", "ring-white", "scale-105", "shadow-lg");
         if (btn.getAttribute("data-theme-btn") === themeName) {
-          btn.classList.add("ring-2", "ring-white", "scale-105");
+          btn.classList.add("ring-2", "ring-white", "scale-105", "shadow-lg");
         }
       });
       localStorage.setItem(STORAGE_KEY_THEME, themeName);
@@ -429,38 +507,44 @@
     const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
     if (savedTheme) applyTheme(savedTheme);
 
-    // 新增與編輯店家邏輯
-    const editModal = document.getElementById("editModal");
-    const storeForm = document.getElementById("storeForm");
+    // 新增店家（需密碼 3701）
+    const addBtn = document.getElementById("openAddModalBtn");
+    if (addBtn) {
+      addBtn.addEventListener("click", () => {
+        if (!checkPermission()) return;
 
-    document.getElementById("openAddModalBtn").addEventListener("click", () => {
-      document.getElementById("formMode").value = "add";
-      document.getElementById("originalStoreId").value = "";
-      document.getElementById("editModalHeading").textContent = "新增小琉球美食項目";
-      document.getElementById("deleteStoreBtn").classList.add("hidden");
+        document.getElementById("formMode").value = "add";
+        document.getElementById("originalStoreId").value = "";
+        document.getElementById("editModalHeading").textContent = "新增小琉球美食項目";
+        document.getElementById("deleteStoreBtn").classList.add("hidden");
 
-      let maxNum = 0;
-      foodStores.forEach(s => {
-        const n = parseInt(s.id, 10);
-        if (!isNaN(n) && n > maxNum) maxNum = n;
+        let maxNum = 0;
+        foodStores.forEach(s => {
+          const n = parseInt(s.id, 10);
+          if (!isNaN(n) && n > maxNum) maxNum = n;
+        });
+        const nextId = (maxNum + 1 < 10 ? "0" : "") + (maxNum + 1);
+
+        document.getElementById("inputStoreId").value = nextId;
+        document.getElementById("inputStoreName").value = "";
+        document.getElementById("inputStoreUrl").value = "";
+        document.getElementById("inputPhotoUrl").value = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80";
+        document.getElementById("inputStorePhone").value = "";
+        document.getElementById("inputStoreHours").value = "10:00–20:00";
+        document.getElementById("inputStoreAddress").value = "屏東縣琉球鄉";
+        document.getElementById("inputStoreHighlight").value = "小琉球推薦 • 必吃美食";
+        document.getElementById("inputStoreNote").value = "";
+
+        const editModal = document.getElementById("editModal");
+        editModal.classList.remove("hidden");
+        editModal.classList.add("flex");
       });
-      const nextId = (maxNum + 1 < 10 ? "0" : "") + (maxNum + 1);
+    }
 
-      document.getElementById("inputStoreId").value = nextId;
-      document.getElementById("inputStoreName").value = "";
-      document.getElementById("inputStoreUrl").value = "";
-      document.getElementById("inputPhotoUrl").value = "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80";
-      document.getElementById("inputStorePhone").value = "";
-      document.getElementById("inputStoreHours").value = "10:00–20:00";
-      document.getElementById("inputStoreAddress").value = "屏東縣琉球鄉";
-      document.getElementById("inputStoreHighlight").value = "海島新發現 • 必吃推薦";
-      document.getElementById("inputStoreNote").value = "";
+    // 編輯店家（需密碼 3701）
+    window.requestOpenEdit = function(id) {
+      if (!checkPermission()) return;
 
-      editModal.classList.remove("hidden");
-      editModal.classList.add("flex");
-    });
-
-    window.openEditModal = function(id) {
       const s = foodStores.find(item => item.id === id);
       if (!s) return;
       document.getElementById("formMode").value = "edit";
@@ -479,68 +563,82 @@
       document.getElementById("inputStoreHighlight").value = s.highlight || "";
       document.getElementById("inputStoreNote").value = s.note || "";
 
+      const editModal = document.getElementById("editModal");
       editModal.classList.remove("hidden");
       editModal.classList.add("flex");
     };
 
-    storeForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const mode = document.getElementById("formMode").value;
-      const origId = document.getElementById("originalStoreId").value;
-      const cat = document.getElementById("inputStoreCategory").value;
+    const storeForm = document.getElementById("storeForm");
+    const editModal = document.getElementById("editModal");
 
-      const newStore = {
-        id: document.getElementById("inputStoreId").value.trim(),
-        name: document.getElementById("inputStoreName").value.trim(),
-        url: document.getElementById("inputStoreUrl").value.trim(),
-        category: cat,
-        imageUrl: document.getElementById("inputPhotoUrl").value.trim(),
-        phone: document.getElementById("inputStorePhone").value.trim() || "依店家公告",
-        hours: document.getElementById("inputStoreHours").value.trim() || "依店家公告",
-        address: document.getElementById("inputStoreAddress").value.trim() || "屏東縣琉球鄉",
-        highlight: document.getElementById("inputStoreHighlight").value.trim() || "小琉球推薦",
-        note: document.getElementById("inputStoreNote").value.trim() || "特色美食店家",
-        emoji: cat.includes("早") ? "🌅" : cat.includes("咖") || cat.includes("甜") ? "🍧" : cat.includes("夜") || cat.includes("酒") ? "🍹" : "🍽️"
-      };
+    if (storeForm) {
+      storeForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const mode = document.getElementById("formMode").value;
+        const origId = document.getElementById("originalStoreId").value;
+        const cat = document.getElementById("inputStoreCategory").value;
 
-      if (mode === "add") {
-        foodStores.push(newStore);
-      } else {
-        const idx = foodStores.findIndex(item => item.id === origId);
-        if (idx !== -1) foodStores[idx] = newStore;
-        else foodStores.push(newStore);
-      }
+        const newStore = {
+          id: document.getElementById("inputStoreId").value.trim(),
+          name: document.getElementById("inputStoreName").value.trim(),
+          url: document.getElementById("inputStoreUrl").value.trim(),
+          category: cat,
+          imageUrl: document.getElementById("inputPhotoUrl").value.trim(),
+          phone: document.getElementById("inputStorePhone").value.trim() || "依店家公告",
+          hours: document.getElementById("inputStoreHours").value.trim() || "依店家公告",
+          address: document.getElementById("inputStoreAddress").value.trim() || "屏東縣琉球鄉",
+          highlight: document.getElementById("inputStoreHighlight").value.trim() || "小琉球推薦",
+          note: document.getElementById("inputStoreNote").value.trim() || "特色美食店家",
+          emoji: cat.includes("早") ? "🌅" : cat.includes("咖") || cat.includes("甜") ? "🍧" : cat.includes("夜") || cat.includes("酒") ? "🍹" : "🍽️"
+        };
 
-      localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(foodStores));
-      editModal.classList.add("hidden");
-      renderCategories();
-      renderCards();
-    });
+        if (mode === "add") {
+          foodStores.push(newStore);
+        } else {
+          const idx = foodStores.findIndex(item => item.id === origId);
+          if (idx !== -1) foodStores[idx] = newStore;
+          else foodStores.push(newStore);
+        }
 
-    document.getElementById("deleteStoreBtn").addEventListener("click", () => {
-      const origId = document.getElementById("originalStoreId").value;
-      if (confirm("確定要刪除這個店家嗎？")) {
-        foodStores = foodStores.filter(item => item.id !== origId);
         localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(foodStores));
-        editModal.classList.add("hidden");
+        if (editModal) editModal.classList.add("hidden");
         renderCategories();
         renderCards();
-      }
-    });
+      });
+    }
 
-    document.getElementById("restoreDefaultBtn").addEventListener("click", () => {
-      if (confirm("確定要還原為最初的預設資料與分類名稱嗎？")) {
-        foodStores = JSON.parse(JSON.stringify(defaultFoodStores));
-        categories = JSON.parse(JSON.stringify(defaultCategories));
-        localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(foodStores));
-        localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(categories));
-        renderCategories();
-        renderCards();
-      }
-    });
+    const delBtn = document.getElementById("deleteStoreBtn");
+    if (delBtn) {
+      delBtn.addEventListener("click", () => {
+        const origId = document.getElementById("originalStoreId").value;
+        if (confirm("確定要刪除這個店家嗎？")) {
+          foodStores = foodStores.filter(item => item.id !== origId);
+          localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(foodStores));
+          if (editModal) editModal.classList.add("hidden");
+          renderCategories();
+          renderCards();
+        }
+      });
+    }
 
-    document.getElementById("closeEditModal").onclick = () => editModal.classList.add("hidden");
-    document.getElementById("cancelEditBtn").onclick = () => editModal.classList.add("hidden");
+    const restoreBtn = document.getElementById("restoreDefaultBtn");
+    if (restoreBtn) {
+      restoreBtn.addEventListener("click", () => {
+        if (checkPermission() && confirm("確定要還原為最初的 15 間預設店家與分類嗎？")) {
+          foodStores = JSON.parse(JSON.stringify(defaultFoodStores));
+          categories = JSON.parse(JSON.stringify(defaultCategories));
+          localStorage.setItem(STORAGE_KEY_STORES, JSON.stringify(foodStores));
+          localStorage.setItem(STORAGE_KEY_CATS, JSON.stringify(categories));
+          renderCategories();
+          renderCards();
+        }
+      });
+    }
+
+    const closeEdit = document.getElementById("closeEditModal");
+    const cancelEdit = document.getElementById("cancelEditBtn");
+    if (closeEdit) closeEdit.onclick = () => { if (editModal) editModal.classList.add("hidden"); };
+    if (cancelEdit) cancelEdit.onclick = () => { if (editModal) editModal.classList.add("hidden"); };
 
     window.openPhotoModal = function(id) {
       const s = foodStores.find(item => item.id === id);
@@ -551,8 +649,11 @@
       document.getElementById("modalPhone").textContent = s.phone;
       document.getElementById("modalPhone").href = `tel:${s.phone}`;
       document.getElementById("modalFoodImg").src = s.imageUrl || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80";
-      document.getElementById("photoModal").classList.remove("hidden");
-      document.getElementById("photoModal").classList.add("flex");
+      const photoModal = document.getElementById("photoModal");
+      if (photoModal) {
+        photoModal.classList.remove("hidden");
+        photoModal.classList.add("flex");
+      }
     };
 
     window.openMapModal = function(id) {
@@ -561,26 +662,38 @@
       document.getElementById("mapModalTitle").textContent = s.name;
       document.getElementById("mapModalAddress").textContent = s.address;
       document.getElementById("googleMapIframe").src = `https://maps.google.com/maps?q=${encodeURIComponent(s.address)}&output=embed`;
-      document.getElementById("mapModal").classList.remove("hidden");
-      document.getElementById("mapModal").classList.add("flex");
+      const mapModal = document.getElementById("mapModal");
+      if (mapModal) {
+        mapModal.classList.remove("hidden");
+        mapModal.classList.add("flex");
+      }
     };
 
-    document.getElementById("closePhotoModal").onclick = () => document.getElementById("photoModal").classList.add("hidden");
-    document.getElementById("closeMapModal").onclick = () => document.getElementById("mapModal").classList.add("hidden");
+    const closePhoto = document.getElementById("closePhotoModal");
+    const closeMap = document.getElementById("closeMapModal");
+    if (closePhoto) closePhoto.onclick = () => document.getElementById("photoModal").classList.add("hidden");
+    if (closeMap) closeMap.onclick = () => document.getElementById("mapModal").classList.add("hidden");
 
-    document.getElementById("searchInput").oninput = (e) => {
-      searchQuery = e.target.value;
-      renderCards();
-    };
+    const searchInput = document.getElementById("searchInput");
+    if (searchInput) {
+      searchInput.oninput = (e) => {
+        searchQuery = e.target.value;
+        renderCards();
+      };
+    }
 
-    document.getElementById("resetFilterBtn").onclick = () => {
-      currentCategory = "all";
-      searchQuery = "";
-      document.getElementById("searchInput").value = "";
-      renderCategories();
-      renderCards();
-    };
+    const resetFilter = document.getElementById("resetFilterBtn");
+    if (resetFilter) {
+      resetFilter.onclick = () => {
+        currentCategory = "all";
+        searchQuery = "";
+        if (searchInput) searchInput.value = "";
+        renderCategories();
+        renderCards();
+      };
+    }
 
+    // 初始化
     renderCategories();
     renderCards();
   </script>
