@@ -1,522 +1,557 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>小琉球全方位美食與行程指南｜海洋海龜行程版</title>
-  <!-- 載入 Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 載入 Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小琉球美景與美食多日排程規劃</title>
+    <style>
+        :root {
+            --bg-color: #0b192c;
+            --card-bg: #1e3e62;
+            --accent-color: #008DDA;
+            --text-color: #ffffff;
+            --text-muted: #93B5C6;
+            --success-color: #2ed573;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #ffffff;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            color: var(--text-muted);
+        }
 
-  <style>
-    * {
-      box-sizing: border-box;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-    }
+        /* 種類篩選按鈕列 */
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 10px rgba(0, 141, 218, 0.3);
+        }
 
-    body {
-      font-family: 'Inter', 'Noto Sans TC', sans-serif;
-      transition: background 0.8s ease, color 0.4s ease;
-      min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
-    }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+        }
+        .card.hidden {
+            display: none;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        /* 各分類標籤顏色 */
+        .badge-scenery { background-color: rgba(46, 213, 115, 0.2); color: #2ed573; }
+        .badge-meal { background-color: rgba(0, 141, 218, 0.2); color: #41c1ff; }
+        .badge-ice { background-color: rgba(112, 161, 255, 0.2); color: #70a1ff; }
+        .badge-bar { background-color: rgba(162, 155, 254, 0.2); color: #a29bfe; }
 
-    /* 依照主題切換真實的海洋與沙灘背景圖 */
-    body[data-theme="ocean-blue"] {
-      background: linear-gradient(rgba(2, 132, 199, 0.5), rgba(15, 23, 42, 0.8)), 
-                  url('https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      --card-bg: rgba(255, 255, 255, 0.95);
-      --card-border: rgba(186, 230, 253, 0.9);
-      --text-primary: #0f172a;
-      --header-text: #ffffff;
-      --header-sub: #bae6fd;
-      --panel-bg: rgba(15, 23, 42, 0.6);
-      --panel-border: rgba(255, 255, 255, 0.25);
-    }
-
-    body[data-theme="sunny-beach"] {
-      background: linear-gradient(rgba(245, 158, 11, 0.3), rgba(2, 132, 199, 0.6)), 
-                  url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      --card-bg: rgba(255, 255, 255, 0.96);
-      --card-border: rgba(253, 224, 71, 0.8);
-      --text-primary: #1e293b;
-      --header-text: #0f172a;
-      --header-sub: #1e3a8a;
-      --panel-bg: rgba(255, 255, 255, 0.82);
-      --panel-border: rgba(217, 119, 6, 0.3);
-    }
-
-    body[data-theme="deep-starry"] {
-      background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(2, 6, 23, 0.95)), 
-                  url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      --card-bg: rgba(30, 41, 59, 0.93);
-      --card-border: rgba(56, 189, 248, 0.35);
-      --text-primary: #f8fafc;
-      --header-text: #f8fafc;
-      --header-sub: #7dd3fc;
-      --panel-bg: rgba(30, 41, 59, 0.78);
-      --panel-border: rgba(56, 189, 248, 0.3);
-    }
-
-    body[data-theme="mint-breeze"] {
-      background: linear-gradient(rgba(13, 148, 136, 0.45), rgba(6, 78, 59, 0.7)), 
-                  url('https://images.unsplash.com/photo-1512100356356-de1b84283e18?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      --card-bg: rgba(255, 255, 255, 0.96);
-      --card-border: rgba(45, 212, 191, 0.55);
-      --text-primary: #064e3b;
-      --header-text: #ffffff;
-      --header-sub: #99f6e4;
-      --panel-bg: rgba(6, 78, 59, 0.65);
-      --panel-border: rgba(45, 212, 191, 0.4);
-    }
-
-    body[data-theme="warm-ivory"] {
-      background: linear-gradient(rgba(243, 239, 230, 0.85), rgba(230, 220, 205, 0.95)), 
-                  url('https://images.unsplash.com/photo-1519046904884-53103b34b206?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
-      background-size: cover;
-      --card-bg: #ffffff;
-      --card-border: #e5dec9;
-      --text-primary: #292524;
-      --header-text: #1c1917;
-      --header-sub: #57534e;
-      --panel-bg: rgba(255, 255, 255, 0.9);
-      --panel-border: #d6d3d1;
-    }
-
-    .food-card {
-      background-color: var(--card-bg);
-      border: 1.5px solid var(--card-border);
-      color: var(--text-primary);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .food-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.25);
-    }
-
-    .theme-header-title { color: var(--header-text); }
-    .theme-header-sub { color: var(--header-sub); }
-    .theme-panel {
-      background-color: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      backdrop-filter: blur(12px);
-    }
-
-    @keyframes swimTurtle1 {
-      0% { transform: translate(-120px, 60vh) rotate(15deg) scale(0.8); opacity: 0; }
-      20% { opacity: 0.25; }
-      80% { opacity: 0.25; }
-      100% { transform: translate(110vw, 15vh) rotate(-15deg) scale(1); opacity: 0; }
-    }
-
-    @keyframes swimTurtle2 {
-      0% { transform: translate(110vw, 75vh) rotate(-20deg) scale(0.85); opacity: 0; }
-      20% { opacity: 0.2; }
-      80% { opacity: 0.2; }
-      100% { transform: translate(-120px, 25vh) rotate(20deg) scale(0.75); opacity: 0; }
-    }
-
-    .turtle-swimming-1 {
-      position: absolute;
-      animation: swimTurtle1 26s linear infinite;
-      pointer-events: none;
-    }
-
-    .turtle-swimming-2 {
-      position: absolute;
-      animation: swimTurtle2 32s linear infinite;
-      pointer-events: none;
-    }
-  </style>
+        .card-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            background: rgba(0,0,0,0.15);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .day-select-group {
+            display: flex;
+            gap: 5px;
+            justify-content: space-between;
+        }
+        .day-btn {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-muted);
+            border: none;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .day-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+        .checkbox-container input {
+            accent-color: var(--success-color);
+            width: 15px;
+            height: 15px;
+            cursor: pointer;
+        }
+        .card h3 {
+            margin: 0 0 6px 0;
+            font-size: 17px;
+        }
+        .card p {
+            margin: 0 0 12px 0;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .card-footer {
+            font-size: 12px;
+            color: #b0c4de;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 8px;
+        }
+        
+        /* 多天排程 Tab 頁籤切換樣式 */
+        .itinerary-section {
+            background-color: #132238;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--accent-color);
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            box-shadow: 0 4px 10px rgba(0, 141, 218, 0.3);
+        }
+        .itinerary-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .itinerary-header h2 {
+            margin: 0;
+            color: #41c1ff;
+            font-size: 20px;
+        }
+        .batch-nav-btn {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+            box-shadow: 0 4px 10px rgba(46, 213, 115, 0.3);
+        }
+        .batch-nav-btn:hover {
+            opacity: 0.9;
+        }
+        .itinerary-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .itinerary-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.05);
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            justify-content: space-between;
+        }
+        .order-badge {
+            background: var(--accent-color);
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .item-info {
+            flex-grow: 1;
+        }
+        .item-title {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .empty-tip {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+    </style>
 </head>
-<body data-theme="ocean-blue" class="antialiased selection:bg-sky-400 selection:text-white">
+<body>
 
-  <!-- 背景生動海龜游動層 -->
-  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-    <svg class="w-36 h-36 turtle-swimming-1 text-sky-200 opacity-25" viewBox="0 0 120 120" fill="currentColor">
-      <path d="M60 22c-16 0-28 14-28 32s12 34 28 34 28-16 28-34-12-32-28-32zm0 8c11 0 20 10 20 24s-9 26-20 26-20-12-20-26 9-24 20-24z"/>
-    </svg>
-    <svg class="w-28 h-28 turtle-swimming-2 text-teal-200 opacity-20" viewBox="0 0 120 120" fill="currentColor" style="animation-delay: -13s;">
-      <path d="M60 22c-16 0-28 14-28 32s12 34 28 34 28-16 28-34-12-32-28-32zm0 8c11 0 20 10 20 24s-9 26-20 26-20-12-20-26 9-24 20-24z"/>
-    </svg>
-  </div>
-
-  <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-
-    <!-- 頁首 -->
-    <header class="text-center mb-8">
-      <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 mb-4 shadow-sm">
-        <span class="text-xl">🐢</span>
-        <span class="text-xs sm:text-sm font-bold tracking-wider uppercase theme-header-title">XIAOLIUQIU OCEAN • TURTLE • ISLAND</span>
-      </div>
-      <h1 class="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight theme-header-title mb-3 drop-shadow-md leading-tight">
-        小琉球全方位美食與行程指南
-      </h1>
-      <p class="text-sm sm:text-base max-w-2xl mx-auto theme-header-sub font-semibold drop-shadow leading-relaxed">
-        勾選喜歡的項目即可自動整合至「今日行程指定據點總覽」！點擊名稱可直接進行 Google 搜尋。
-      </p>
+<div class="container">
+    <header>
+        <h1>小琉球美景與美食多日排程規劃</h1>
+        <p class="subtitle">點擊下方種類按鈕進行篩選，自由勾選加入多日行程與連續導航！</p>
     </header>
 
-    <!-- 統合的「今日行程指定據點總覽」面板 -->
-    <section class="theme-panel rounded-3xl p-4 sm:p-6 mb-8 shadow-xl space-y-4 border-2 border-amber-400/50">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 class="text-base sm:text-lg font-black theme-header-title flex items-center gap-2">
-          <span>📍</span> 今日行程指定據點總覽
-        </h2>
-        <div class="flex items-center gap-2">
-          <span id="itineraryCount" class="text-xs font-black px-3 py-1 rounded-full bg-amber-500 text-white">已選擇 0 個項目</span>
-          <button type="button" id="multiNavBtn" onclick="openMultiRouteMap()" class="hidden px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-lg hover:bg-sky-700 transition flex items-center gap-1.5">
-            <span>🗺️ 在 Google 地圖開啟所有標記據點</span>
-          </button>
-        </div>
-      </div>
-      
-      <!-- 固定的住宿導航起點：海天一色 -->
-      <div class="bg-white/95 p-3.5 rounded-2xl border-2 border-emerald-500 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-slate-800 shadow-md">
-        <div>
-          <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white mr-1.5">🏠 住宿起點</span>
-          <span class="font-black text-emerald-800 text-sm">小琉球海天一色</span>
-          <p class="text-slate-500 mt-0.5">📍 屏東縣琉球鄉（指定住宿位址）</p>
-        </div>
-        <button type="button" onclick="openCustomMap('小琉球海天一色', '屏東縣琉球鄉')" class="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold shrink-0 hover:bg-emerald-700 transition">📍 單點查看</button>
-      </div>
-
-      <div id="itineraryList" class="flex flex-wrap gap-2 text-xs sm:text-sm text-slate-700 pt-2">
-        <p class="text-slate-400 italic">尚未勾選任何行程，請在下方卡片點選「加入今日行程」來標記您的指定據點！</p>
-      </div>
-      
-      <!-- 統合的據點清單區塊 -->
-      <div id="itineraryNavContainer" class="hidden pt-3 border-t border-white/20 space-y-2">
-        <p class="text-xs font-bold theme-header-title">📍 已排入行程的指定據點清單：</p>
-        <div id="itineraryNavList" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
-      </div>
-    </section>
-
-    <!-- 控制列：主題切換與分類 -->
-    <section class="theme-panel rounded-3xl p-4 sm:p-6 mb-8 shadow-xl space-y-4">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-4 border-b border-white/20">
-        <div>
-          <h2 class="text-sm sm:text-base font-bold theme-header-title">選擇背景氛圍主題</h2>
-        </div>
-        <div class="flex flex-wrap gap-2" id="themeSelector">
-          <button type="button" data-theme-btn="ocean-blue" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 text-white shadow">🌊 湛藍海洋</button>
-          <button type="button" data-theme-btn="sunny-beach" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-amber-100 text-amber-900">🏖️ 陽光白沙灘</button>
-          <button type="button" data-theme-btn="deep-starry" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 text-sky-300">🌌 深海星空</button>
-          <button type="button" data-theme-btn="mint-breeze" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-teal-100 text-teal-900">🌿 薄荷海風</button>
-          <button type="button" data-theme-btn="warm-ivory" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-stone-100 text-stone-800">📖 柔和米白</button>
-        </div>
-      </div>
-
-      <!-- 搜尋與分類列 -->
-      <div class="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div class="relative w-full md:flex-1">
-          <input type="text" id="searchInput" placeholder="搜尋編號、項目名稱或地址..." class="w-full px-4 py-2.5 rounded-2xl bg-white/95 text-slate-900 text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-sm" />
-        </div>
-        
-        <!-- 動態分類篩選按鈕容器 -->
-        <div class="flex flex-wrap gap-2 items-center" id="categoryFilterContainer"></div>
-      </div>
-    </section>
-
-    <!-- 統計提示 -->
-    <div class="flex justify-between items-center mb-4 px-1">
-      <p id="resultCount" class="text-sm font-bold theme-header-title drop-shadow">目前顯示全部項目</p>
+    <!-- 種類篩選列 -->
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterCategory('all', this)">全部顯示</button>
+        <button class="filter-btn" onclick="filterCategory('scenery', this)">✨ 美景</button>
+        <button class="filter-btn" onclick="filterCategory('meal', this)">🍜 正餐</button>
+        <button class="filter-btn" onclick="filterCategory('ice', this)">🍧 冰品</button>
+        <button class="filter-btn" onclick="filterCategory('bar', this)">🍸 酒吧</button>
     </div>
 
-    <!-- 卡片網格 -->
-    <main id="foodGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></main>
-
-    <!-- 無搜尋結果 -->
-    <div id="emptyState" class="hidden text-center py-16 theme-panel rounded-3xl mt-6">
-      <div class="text-5xl mb-3">🐢</div>
-      <h3 class="text-xl font-bold theme-header-title mb-2">找不到符合條件的項目</h3>
-      <button type="button" id="resetFilterBtn" class="px-5 py-2.5 rounded-xl bg-sky-500 text-white font-bold text-sm">顯示全部項目</button>
-    </div>
-
-    <!-- 頁尾 -->
-    <footer class="mt-14 pt-6 border-t border-white/20 text-center text-xs theme-header-sub">
-      <p class="font-bold drop-shadow">🐢 小琉球全方位美食與行程指南（海洋海龜版）</p>
-    </footer>
-  </div>
-
-  <!-- 燈箱：單點地圖檢視 -->
-  <div id="mapModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md">
-    <div class="bg-white text-slate-900 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[96vh]">
-      <div class="px-6 py-4 bg-gradient-to-r from-sky-600 to-teal-600 text-white flex items-center justify-between">
-        <h3 id="mapModalTitle" class="text-base sm:text-lg font-black truncate"></h3>
-        <button type="button" id="closeMapModal" class="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center font-bold text-base hover:bg-white/30 transition">✕</button>
-      </div>
-      <div class="relative w-full h-[82vh] bg-slate-100">
-        <iframe id="googleMapIframe" class="w-full h-full border-0" loading="lazy" src=""></iframe>
-      </div>
-    </div>
-  </div>
-
-  <!-- JavaScript 核心邏輯 -->
-  <script>
-    const STORAGE_KEY_THEME = "xiaoliuqiu_food_theme_v37";
-    const STORAGE_KEY_FAVS = "xiaoliuqiu_itinerary_favs_v37";
-
-    const categories = ["早餐", "正餐", "燒烤", "咖啡/甜品", "宵夜/酒吧", "交通選項", "景觀選項"];
-
-    const foodStores = [
-      { id: "01", name: "小琉球傳統早餐", category: "早餐", address: "屏東縣琉球鄉民生路28-5號", phone: "08-8614105", hours: "03:30–10:30", note: "超人氣清晨限定傳統中式早點，手工蛋餅、賓士包與古早味豆漿必點。", highlight: "清晨限定 • 在地古早味", emoji: "🥟" },
-      { id: "02", name: "相思麵 / 在地古早味麵食", category: "正餐", address: "屏東縣琉球鄉上杉路65-1號", phone: "08-8614423", hours: "11:00–14:00、17:00–20:00", note: "柴燒肉燥香氣四溢的經典乾麵與小菜，小琉球排隊必吃的傳統麵館。", highlight: "柴燒肉燥 • 排隊名店", emoji: "🍜" },
-      { id: "03", name: "Mizi's House 米籽洋食", category: "正餐", address: "屏東縣琉球鄉中正路161-52號", phone: "0988-611-132", hours: "17:00–21:30", note: "結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。", highlight: "高 CP 值 • 精緻洋食", emoji: "🍝" },
-      { id: "04", name: "小琉球海島酒吧 BAR", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路27號", phone: "08-861-1167", hours: "16:30–01:00", note: "海島夜晚微醺首選，提供特調雞尾酒與輕鬆氛圍。", highlight: "海島微醺 • 營業至凌晨", emoji: "🍸" },
-      { id: "05", name: "Pi Turtle 派海龜特色餐廳", category: "正餐", address: "屏東縣琉球鄉復興路1-100號", phone: "08-8612818", hours: "11:30–21:00", note: "充滿海龜海洋主題佈置的特色餐館，全日供餐。", highlight: "海龜主題 • 全日供餐", emoji: "🐢" },
-      { id: "06", name: "FIVE BBQ 小琉球燒烤", category: "燒烤", address: "屏東縣琉球鄉中山路108-1號", phone: "0911-973-378", hours: "17:00–20:30", note: "新鮮海鮮與肉品炭火燒烤吃到飽，氣氛熱鬧。", highlight: "海鮮肉品 • 炭火燒烤", emoji: "🔥" },
-      { id: "07", name: "小琉球原燒/海鮮炭烤餐廳", category: "燒烤", address: "屏東縣琉球鄉中山路", phone: "08-8613311", hours: "17:00–22:00", note: "道地炭火燒烤，新鮮牡蠣與豐富肉品一次滿足。", highlight: "碳烤牡蠣 • 聚餐首選", emoji: "🔥" },
-      { id: "08", name: "小琉球人氣炸物/宵夜點心", category: "宵夜/酒吧", address: "屏東縣琉球鄉民生路32-2號", phone: "0910-712-474", hours: "15:00–21:30", note: "現點現炸酥脆炸物點心。", highlight: "現點現炸 • 散步美食", emoji: "🍗" },
-      { id: "09", name: "小琉球特色下午茶/冰品", category: "咖啡/甜品", address: "屏東縣琉球鄉中正路267-14號", phone: "0976-181-739", hours: "10:00–20:00", note: "沁涼刨冰與海島風味甜品。", highlight: "消暑冰品 • 午後沁涼", emoji: "🍧" },
-      { id: "10", name: "小琉球海島早午餐/咖啡", category: "早餐", address: "屏東縣琉球鄉中正路168-3號", phone: "08-8614688", hours: "08:00–17:00", note: "豐盛早午餐拼盤與手沖咖啡。", highlight: "悠閒早午餐 • 精品咖啡", emoji: "🥐" },
-      { id: "11", name: "Seaside Cafe 海邊咖啡", category: "咖啡/甜品", address: "屏東縣琉球鄉海景第一排", phone: "08-8612588", hours: "10:30–21:00", note: "坐擁無敵海景的看海咖啡廳。", highlight: "海景第一排 • 低消 NT$200", emoji: "🌊" },
-      { id: "12", name: "小琉球手搖飲/海島特調", category: "咖啡/甜品", address: "屏東縣琉球鄉民生路1號", phone: "0965-105-988", hours: "11:00–17:00", note: "環島騎車途中清涼果茶。", highlight: "環島必喝 • 清爽果茶", emoji: "🧋" },
-      { id: "13", name: "小琉球海龜燒/特色點心", category: "咖啡/甜品", address: "屏東縣琉球鄉中山路30號", phone: "現場購買", hours: "11:00–18:00", note: "超萌海龜造型雞蛋糕與特色小點。", highlight: "超萌海龜造型 • 打卡必吃", emoji: "🧇" },
-      { id: "14", name: "島嶼檸檬茶咖啡餐酒館", category: "咖啡/甜品", address: "屏東縣琉球鄉三民路11-12號", phone: "0968-688892", hours: "11:00–18:00", note: "新鮮島嶼檸檬特調飲品與輕食。", highlight: "島嶼檸檬特調 • 質感餐酒館", emoji: "🍋" },
-      { id: "15", name: "小琉球海景甜品/輕食", category: "咖啡/甜品", address: "屏東縣琉球鄉民族路36-17號", phone: "現場候位", hours: "10:00–17:00", note: "精緻手作甜品與輕食小店。", highlight: "手作甜品 • 輕食午茶", emoji: "🍰" },
-      { id: "16", name: "小琉球在地風味餐館", category: "正餐", address: "屏東縣琉球鄉民生路", phone: "08-8611498", hours: "10:00–17:00", note: "道地小琉球家常海味料理。", highlight: "在地漁村風味 • 午間推薦", emoji: "🐟" },
-      { id: "17", name: "東港往返小琉球客船/交通", category: "交通選項", address: "屏東縣東港鎮朝隆路（東港碼頭）", phone: "08-832-5806", hours: "07:00–17:00（依船班為主）", note: "從台灣本島東港搭乘交通船前往小琉球白沙港或大福港的最主要方式。", highlight: "本島對渡 • 航程約 25-30 分鐘", emoji: "🚢" },
-      { id: "18", name: "島上機車出租 / 環島交通", category: "交通選項", address: "屏東縣琉球鄉白沙港周邊", phone: "各店家公告", hours: "08:00–18:00", note: "抵達小琉球後最便利的代步工具，環島與前往各景點必備。", highlight: "自由行必備 • 機動性高", emoji: "🛵" },
-      { id: "19", name: "花瓶岩風景區", category: "景觀選項", address: "屏東縣琉球鄉本漁路起(白沙國小旁)", phone: "全天開放", hours: "全天開放", note: "小琉球最著名的地標景觀，獨特的珊瑚礁岩與清澈見底的海水，常有海龜出沒。", highlight: "地標景觀 • 浮潛與看海龜勝地", emoji: "🪨" },
-      { id: "20", name: "美人洞風景區", category: "景觀選項", address: "屏東縣琉球鄉美人路", phone: "08-861-3051", hours: "07:30–17:30", note: "依山傍海的天然海蝕洞景觀，沿途步道視野遼闊，欣賞壯麗海岸線的好去處。", highlight: "天然海蝕洞 • 壯麗海景步道", emoji: "🌊" },
-      { id: "21", name: "厚石群礁與落日亭", category: "景觀選項", address: "屏東縣琉球鄉環島公路南段", phone: "全天開放", hours: "全天開放", note: "沿岸綿延的壯觀裙狀珊瑚礁，更是觀賞夕陽西下與夜晚星空的絕佳祕境。", highlight: "絕美夕陽 • 珊瑚礁海岸秘境", emoji: "🌅" }
-    ];
-
-    let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY_FAVS)) || [];
-    let currentCategory = "all";
-    let searchQuery = "";
-
-    // 渲染分類按鈕
-    function renderCategories() {
-      const container = document.getElementById("categoryFilterContainer");
-      if (!container) return;
-
-      let html = `<button type="button" data-cat="all" class="cat-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold ${currentCategory === 'all' ? 'bg-sky-500 text-white shadow' : 'bg-white/85 text-slate-700'} shadow-sm">全部 (${foodStores.length})</button>`;
-
-      categories.forEach(cat => {
-        const isActive = currentCategory === cat;
-        html += `
-          <button type="button" data-cat="${cat}" class="cat-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold ${isActive ? 'bg-sky-500 text-white shadow' : 'bg-white/85 text-slate-700'} shadow-sm">
-            ${cat}
-          </button>
-        `;
-      });
-
-      container.innerHTML = html;
-
-      container.querySelectorAll(".cat-btn").forEach(btn => {
-        btn.onclick = () => {
-          currentCategory = btn.dataset.cat;
-          renderCategories();
-          renderCards();
-        };
-      });
-    }
-
-    // 點擊名稱直接開啟 Google 搜尋
-    window.handleNameClick = function(name) {
-      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(name + " 小琉球")}`;
-      window.open(searchUrl, "_blank");
-    };
-
-    // 切換最愛狀態
-    window.toggleFavorite = function(id) {
-      const index = favorites.indexOf(id);
-      if (index > -1) {
-        favorites.splice(index, 1);
-      } else {
-        favorites.push(id);
-      }
-      localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(favorites));
-      renderCards();
-      renderItinerary();
-    };
-
-    // 開啟單點地圖燈箱
-    window.openCustomMap = function(title, address) {
-      document.getElementById("mapModalTitle").textContent = title;
-      const query = encodeURIComponent(`${title} ${address}`);
-      document.getElementById("googleMapIframe").src = `https://maps.google.com/maps?q=${query}&output=embed&z=17`;
-      const mapModal = document.getElementById("mapModal");
-      if (mapModal) {
-        mapModal.classList.remove("hidden");
-        mapModal.classList.add("flex");
-      }
-    };
-
-    // 開啟 Google 地圖官方多點標記檢視（直接在新分頁開啟，保證完美呈現所有紅色大頭針標記點，絕無多餘導航線）
-    window.openMultiRouteMap = function() {
-      if (favorites.length === 0) return;
-      
-      let waypoints = [{ name: "小琉球海天一色", address: "屏東縣琉球鄉" }];
-      favorites.forEach(id => {
-        const item = foodStores.find(s => s.id === id);
-        if (item) waypoints.push({ name: item.name, address: item.address });
-      });
-
-      // 使用 Google Maps 的搜尋標記網址，會直接在地圖上精準標註每一個勾選的據點紅點
-      const queryStr = waypoints.map(w => `${w.name}`).join(" ");
-      const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent("小琉球 " + queryStr)}` ;
-      
-      window.open(mapsUrl, "_blank");
-    };
-
-    // 渲染今日行程摘要與統一導航位址
-    function renderItinerary() {
-      const listEl = document.getElementById("itineraryList");
-      const countEl = document.getElementById("itineraryCount");
-      const navContainer = document.getElementById("itineraryNavContainer");
-      const navList = document.getElementById("itineraryNavList");
-      const multiNavBtn = document.getElementById("multiNavBtn");
-      if (!listEl || !countEl || !navContainer || !navList || !multiNavBtn) return;
-
-      countEl.textContent = `已選擇 ${favorites.length} 個項目`;
-
-      if (favorites.length === 0) {
-        listEl.innerHTML = `<p class="text-slate-400 italic">尚未勾選任何行程，請在下方卡片點選「加入今日行程」來標記您的指定據點！</p>`;
-        navContainer.classList.add("hidden");
-        navList.innerHTML = "";
-        multiNavBtn.classList.add("hidden");
-        return;
-      }
-
-      multiNavBtn.classList.remove("hidden");
-
-      let tagsHtml = "";
-      let navHtml = "";
-
-      favorites.forEach(id => {
-        const item = foodStores.find(s => s.id === id);
-        if (item) {
-          tagsHtml += `<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-sm">
-            <span>${item.emoji || '📌'}</span>
-            <span>${item.name}</span>
-            <button type="button" onclick="toggleFavorite('${item.id}')" class="ml-1 hover:text-rose-200 font-bold">×</button>
-          </span>`;
-
-          navHtml += `<div class="bg-white/90 p-3 rounded-xl border flex items-center justify-between text-xs text-slate-800 shadow-sm">
+    <!-- 景點與美食卡片清單 -->
+    <div class="grid" id="card-grid">
+        <!-- 1: 花瓶岩 (美景) -->
+        <div class="card" data-id="1" data-category="scenery" data-name="花瓶岩" data-address="屏東縣琉球鄉花瓶岩景點">
             <div>
-              <p class="font-black text-sky-700">${item.emoji || '📌'} ${item.name}</p>
-              <p class="text-slate-500 truncate max-w-[220px] sm:max-w-xs">📍 ${item.address}</p>
-            </div>
-            <button type="button" onclick="openCustomMap('${item.name}', '${item.address}')" class="px-3 py-1.5 rounded-lg bg-sky-600 text-white font-bold shrink-0 hover:bg-sky-700 transition">📍 查看標記</button>
-          </div>`;
-        }
-      });
-
-      listEl.innerHTML = tagsHtml;
-      navList.innerHTML = navHtml;
-      navContainer.classList.remove("hidden");
-    }
-
-    // 渲染卡片
-    function renderCards() {
-      const grid = document.getElementById("foodGrid");
-      if (!grid) return;
-
-      const filtered = foodStores.filter(s => {
-        const matchCat = currentCategory === "all" || s.category === currentCategory;
-        const q = searchQuery.toLowerCase();
-        const matchQuery = !q || s.id.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.address.toLowerCase().includes(q);
-        return matchCat && matchQuery;
-      });
-
-      const countEl = document.getElementById("resultCount");
-      if (countEl) countEl.textContent = `目前顯示 ${filtered.length} / ${foodStores.length} 個項目`;
-      
-      const emptyEl = document.getElementById("emptyState");
-      if (emptyEl) emptyEl.classList.toggle("hidden", filtered.length > 0);
-
-      grid.innerHTML = filtered.map(s => {
-        const isFav = favorites.includes(s.id);
-        return `
-          <article class="food-card rounded-3xl p-5 sm:p-6 flex flex-col justify-between shadow-lg">
-            <div>
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span class="px-3 py-1 rounded-full text-xs font-black bg-sky-600 text-white">NO.${s.id}</span>
-                  <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800">${s.emoji || '🍽️'} ${s.category}</span>
+                <div class="card-header">
+                    <span class="badge badge-scenery">✨ 美景・地標</span>
                 </div>
-                <button type="button" onclick="toggleFavorite('${s.id}')" class="px-3 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm ${isFav ? 'bg-rose-500 text-white' : 'bg-slate-200/80 text-slate-700 hover:bg-slate-300'}">
-                  <span>${isFav ? '❤️ 已排入行程' : '🤍 加入今日行程'}</span>
-                </button>
-              </div>
-              
-              <h3 class="text-lg font-black mb-2 cursor-pointer hover:underline text-sky-700 dark:text-sky-300" onclick="handleNameClick('${s.name}')">
-                ${s.name} 🔍
-              </h3>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>花瓶岩</h3>
+                <p>小琉球最具代表性地標，珊瑚礁岩與清澈蔚藍海域，適合看海與浮潛。</p>
+            </div>
+            <div class="card-footer">📍 屏東縣琉球鄉花瓶岩</div>
+        </div>
 
-              <p class="text-xs font-bold mb-2 opacity-95">✨ ${s.highlight || '小琉球推薦'}</p>
-              <p class="text-sm opacity-90 mb-4">${s.note}</p>
+        <!-- 2: 洪媽媽早餐店 (正餐) -->
+        <div class="card" data-id="2" data-category="meal" data-name="洪媽媽早餐店小琉球" data-address="屏東縣琉球鄉民生路28-5號">
+            <div>
+                <div class="card-header">
+                    <span class="badge badge-meal">🍜 正餐・傳統早餐</span>
+                </div>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>小琉球傳統早餐</h3>
+                <p>清晨限定・在地古早味，手工蛋餅、琉球粿、香賓士包必點。</p>
             </div>
-            <div class="pt-3 border-t text-xs space-y-1">
-              <p class="opacity-80">🕒 ${s.hours || '依公告為主'}</p>
-              <p class="opacity-80">📞 <a href="tel:${s.phone}" class="text-sky-600 font-bold hover:underline">${s.phone || '依公告為主'}</a></p>
-              <p class="text-emerald-700 dark:text-emerald-400 font-bold cursor-pointer hover:underline" onclick="openCustomMap('${s.name}', '${s.address}')">📍 ${s.address}</p>
+            <div class="card-footer">📍 屏東縣琉球鄉民生路28-5號</div>
+        </div>
+
+        <!-- 3: 相思麵 (正餐) -->
+        <div class="card" data-id="3" data-category="meal" data-name="相思麵" data-address="屏東縣琉球鄉上杉路65-1號">
+            <div>
+                <div class="card-header">
+                    <span class="badge badge-meal">🍜 正餐・古早味麵食</span>
+                </div>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>相思麵</h3>
+                <p>柴燒肉燥香氣四溢的經典乾麵與小菜，排隊名店。</p>
             </div>
-          </article>
-        `;
-      }).join("");
+            <div class="card-footer">📍 屏東縣琉球鄉上杉路65-1號</div>
+        </div>
+
+        <!-- 4: 琉球冰舖 (冰品) -->
+        <div class="card" data-id="4" data-category="ice" data-name="琉球冰舖芒果雪花冰" data-address="屏東縣琉球鄉民生路33號">
+            <div>
+                <div class="card-header">
+                    <span class="badge badge-ice">🍧 冰品・消暑聖品</span>
+                </div>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>琉球冰舖 芒果雪花冰</h3>
+                <p>綿密消暑的雪花冰與新鮮芒果，島上夏日解熱必吃。</p>
+            </div>
+            <div class="card-footer">📍 屏東縣琉球鄉民生路33號</div>
+        </div>
+
+        <!-- 5: 蜜仔琉部 Mizi’s House (正餐) -->
+        <div class="card" data-id="5" data-category="meal" data-name="蜜仔琉部Mizi’s House 餐館" data-address="屏東縣琉球鄉中正路161-52號">
+            <div>
+                <div class="card-header">
+                    <span class="badge badge-meal">🍜 正餐・精緻洋食</span>
+                </div>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>Mizi's House 米籽洋食</h3>
+                <p>結合海島新鮮食材的精緻洋食晚餐，高 CP 值首選。</p>
+            </div>
+            <div class="card-footer">📍 屏東縣琉球鄉中正路161-52號</div>
+        </div>
+
+        <!-- 6: 小琉球酒吧·Highbar海壩 (酒吧) -->
+        <div class="card" data-id="6" data-category="bar" data-name="小琉球酒吧·Highbar海壩" data-address="屏東縣琉球鄉民生路27號">
+            <div>
+                <div class="card-header">
+                    <span class="badge badge-bar">🍸 酒吧・宵夜微醺</span>
+                </div>
+                <div class="card-controls">
+                    <div class="day-select-group">
+                        <button type="button" class="day-btn active" onclick="setDay(this, 1)">DAY 1</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 2)">DAY 2</button>
+                        <button type="button" class="day-btn" onclick="setDay(this, 3)">DAY 3</button>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="item-checkbox" onchange="updateItinerary()"> 加入行程
+                    </label>
+                </div>
+                <h3>小琉球海島酒吧 BAR</h3>
+                <p>海島微醺，特調雞尾酒與輕鬆氛圍，營業至凌晨。</p>
+            </div>
+            <div class="card-footer">📍 屏東縣琉球鄉民生路27號</div>
+        </div>
+    </div>
+
+    <!-- 多天行程檢視與導航區 -->
+    <div class="itinerary-section">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(1)">📅 第 1 天行程</button>
+            <button class="tab-btn" onclick="switchTab(2)">📅 第 2 天行程</button>
+            <button class="tab-btn" onclick="switchTab(3)">📅 第 3 天行程</button>
+        </div>
+
+        <div class="itinerary-header">
+            <h2 id="current-tab-title">🗺️ 第 1 天路線與導航</h2>
+            <a id="batch-nav-btn" href="#" target="_blank" class="batch-nav-btn">🚀 開啟當天連續導航</a>
+        </div>
+        <ul id="itinerary-list" class="itinerary-list">
+            <li class="empty-tip">第 1 天尚未加入任何景點。</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    let cardDays = {};
+    let currentActiveTab = 1;
+
+    // 分類篩選功能
+    function filterCategory(category, btn) {
+        // 切換按鈕 active 樣式
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        // 顯示或隱藏對應卡片
+        const cards = document.querySelectorAll('.card');
+        cards.forEach(card => {
+            if (category === 'all' || card.dataset.category === category) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
     }
 
-    // 主題切換
-    const themeButtons = document.querySelectorAll("[data-theme-btn]");
-    function applyTheme(themeName) {
-      document.body.setAttribute("data-theme", themeName);
-      themeButtons.forEach(btn => {
-        btn.classList.remove("ring-2", "ring-white", "scale-105", "shadow-lg");
-        if (btn.getAttribute("data-theme-btn") === themeName) {
-          btn.classList.add("ring-2", "ring-white", "scale-105", "shadow-lg");
+    function setDay(btn, dayNum) {
+        const card = btn.closest('.card');
+        const cardId = card.dataset.id;
+        
+        const buttons = card.querySelectorAll('.day-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        cardDays[cardId] = dayNum;
+        updateItinerary();
+    }
+
+    function switchTab(dayNum) {
+        currentActiveTab = dayNum;
+        
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach((btn, index) => {
+            if (index + 1 === dayNum) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        document.getElementById('current-tab-title').innerText = `🗺️ 第 ${dayNum} 天路線與導航`;
+        updateItinerary();
+    }
+
+    function updateItinerary() {
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        const itineraryList = document.getElementById('itinerary-list');
+        const batchNavBtn = document.getElementById('batch-nav-btn');
+        itineraryList.innerHTML = '';
+
+        let selectedItems = [];
+
+        checkboxes.forEach((cb) => {
+            if (cb.checked) {
+                const card = cb.closest('.card');
+                const cardId = card.dataset.id;
+                const assignedDay = cardDays[cardId] || 1;
+
+                if (assignedDay === currentActiveTab) {
+                    selectedItems.push({
+                        name: card.dataset.name,
+                        address: card.dataset.address
+                    });
+                }
+            }
+        });
+
+        if (selectedItems.length === 0) {
+            itineraryList.innerHTML = `<li class="empty-tip">第 ${currentActiveTab} 天尚未加入任何景點，請從上方卡片勾選並選擇對應天數。</li>`;
+            batchNavBtn.style.display = 'none';
+            return;
         }
-      });
-      localStorage.setItem(STORAGE_KEY_THEME, themeName);
+
+        let origin = encodeURIComponent(selectedItems[0].name + ' ' + selectedItems[0].address);
+        let destination = encodeURIComponent(selectedItems[selectedItems.length - 1].name + ' ' + selectedItems[selectedItems.length - 1].address);
+        
+        let waypoints = '';
+        if (selectedItems.length > 2) {
+            let wpArray = [];
+            for (let i = 1; i < selectedItems.length - 1; i++) {
+                wpArray.push(encodeURIComponent(selectedItems[i].name + ' ' + selectedItems[i].address));
+            }
+            waypoints = `&waypoints=${wpArray.join('|')}`;
+        }
+
+        let mapUrl = '';
+        if (selectedItems.length === 1) {
+            mapUrl = `https://www.google.com/maps/search/?api=1&query=${origin}`;
+        } else {
+            mapUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypoints}&travelmode=driving`;
+        }
+
+        batchNavBtn.href = mapUrl;
+        batchNavBtn.style.display = 'inline-block';
+
+        selectedItems.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.className = 'itinerary-item';
+
+            li.innerHTML = `
+                <div style="display: flex; align-items: center; width: 100%;">
+                    <div class="order-badge">${index + 1}</div>
+                    <div class="item-info">
+                        <div class="item-title">${item.name}</div>
+                        <div style="font-size: 12px; color: #93B5C6;">${item.address}</div>
+                    </div>
+                </div>
+            `;
+            itineraryList.appendChild(li);
+        });
     }
+</script>
 
-    themeButtons.forEach(btn => {
-      btn.addEventListener("click", () => applyTheme(btn.getAttribute("data-theme-btn")));
-    });
-
-    const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
-    if (savedTheme) applyTheme(savedTheme);
-
-    // 關閉地圖燈箱
-    const closeMap = document.getElementById("closeMapModal");
-    if (closeMap) closeMap.onclick = () => document.getElementById("mapModal").classList.add("hidden");
-
-    const searchInput = document.getElementById("searchInput");
-    if (searchInput) {
-      searchInput.oninput = (e) => {
-        searchQuery = e.target.value;
-        renderCards();
-      };
-    }
-
-    const resetFilter = document.getElementById("resetFilterBtn");
-    if (resetFilter) {
-      resetFilter.onclick = () => {
-        currentCategory = "all";
-        searchQuery = "";
-        if (searchInput) searchInput.value = "";
-        renderCategories();
-        renderCards();
-      };
-    }
-
-    // 初始化
-    renderCategories();
-    renderCards();
-    renderItinerary();
-  </script>
 </body>
 </html>
