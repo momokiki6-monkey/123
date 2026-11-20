@@ -3,2339 +3,940 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>趣小琉球三天兩夜15人</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Leaflet 互動地圖樣式與腳本 -->
+  <title>趣小琉球三天兩夜15人｜即時路線同步地圖</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <!-- Firebase Compat SDK（非阻塞同步載入，支援所有預覽與正式網域） -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <!-- 字型 -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Noto+Sans+TC:wght@500;700;800&display=swap" rel="stylesheet" />
   <style>
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
+    :root {
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --accent: #f97316;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #475569;
+      --border: #e2e8f0;
     }
-
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Noto Sans TC', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #0f172a;
-      color: #0f172a;
+      margin: 0; padding: 0; height: 100%; width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: #0f172a; color: var(--text); overflow: hidden;
+    }
+    .app-shell {
+      width: 100%; max-width: 520px; height: 100dvh;
+      margin: 0 auto; background: var(--bg);
+      display: flex; flex-direction: column; position: relative;
+      box-shadow: 0 0 30px rgba(0,0,0,0.45);
+    }
+    /* Header */
+    .topbar {
+      height: 52px; flex-shrink: 0;
+      background: linear-gradient(135deg, #0369a1, #0284c7);
+      color: #fff; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .menu-btn {
+      width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15); color: #fff; font-size: 20px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+    .title-wrap { min-width: 0; }
+    .app-title {
+      font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sync-dot {
+      width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; display: inline-block; flex-shrink: 0;
+    }
+    .sync-dot.online { background: #22c55e; box-shadow: 0 0 6px #4ade80; }
+    .sub-view-name { font-size: 12px; color: #e0f2fe; font-weight: 600; }
+    .topbar-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .btn-sm {
+      height: 34px; padding: 0 10px; border-radius: 8px; border: none;
+      font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+    }
+    .btn-edit { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+    .btn-edit.active { background: #16a34a; border-color: #16a34a; }
+    .btn-next { background: #f97316; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+
+    /* Dropdown Menu */
+    .nav-dropdown {
+      position: absolute; top: 56px; left: 10px; width: 220px;
+      background: #fff; border-radius: 14px; box-shadow: 0 12px 30px rgba(15,23,42,0.28);
+      border: 1px solid var(--border); padding: 6px; z-index: 2000; display: none;
+    }
+    .nav-dropdown.open { display: block; }
+    .nav-item {
+      width: 100%; text-align: left; padding: 12px 14px; border: none; background: transparent;
+      border-radius: 10px; font-size: 15px; font-weight: 700; color: var(--text);
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-item:hover { background: #f1f5f9; }
+    .nav-item.active { background: #e0f2fe; color: #0369a1; }
+
+    /* Split Workspace: 42% Map / 58% List */
+    .map-schedule-wrap {
+      flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    }
+    .map-box {
+      height: 42%; flex-shrink: 0; position: relative; border-bottom: 2px solid #cbd5e1;
+      background: #bae6fd;
+    }
+    #map { width: 100%; height: 100%; }
+    .map-float-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 800;
+      background: rgba(255,255,255,0.95); border: 1px solid #cbd5e1; border-radius: 20px;
+      padding: 6px 12px; font-size: 13px; font-weight: 700; color: #0f172a;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer;
+    }
+    .pick-banner {
+      position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); z-index: 800;
+      background: #dc2626; color: #fff; padding: 6px 14px; border-radius: 20px;
+      font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: none; white-space: nowrap;
+    }
+    .pick-banner.show { display: block; }
+
+    /* List Area 58% */
+    .list-box {
+      height: 58%; flex: 1; overflow-y: auto; padding: 10px 12px 24px;
+      background: #f8fafc; -webkit-overflow-scrolling: touch;
+    }
+    .plan-switch-bar {
+      display: flex; gap: 8px; margin-bottom: 10px; background: #e2e8f0; padding: 4px; border-radius: 12px;
+    }
+    .plan-btn {
+      flex: 1; padding: 9px 6px; border: none; border-radius: 9px; font-size: 14px; font-weight: 800;
+      cursor: pointer; background: transparent; color: #475569;
+    }
+    .plan-btn.active { background: #fff; color: #0369a1; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+    .phase-divider {
+      background: #e0f2fe; color: #0369a1; font-size: 14px; font-weight: 800;
+      padding: 7px 12px; border-radius: 8px; margin: 10px 0 8px; border-left: 4px solid #0284c7;
+    }
+    .stop-card {
+      background: #fff; border-radius: 12px; padding: 12px; margin-bottom: 9px;
+      border: 1.5px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    }
+    .stop-card.current {
+      border-color: #f97316; background: #fff7ed; box-shadow: 0 3px 10px rgba(249,115,22,0.16);
+    }
+    .stop-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .stop-main { flex: 1; min-width: 0; }
+    .stop-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .time-badge {
+      background: #0f172a; color: #fff; font-size: 13px; font-weight: 700;
+      padding: 2px 8px; border-radius: 6px;
+    }
+    .group-badge {
+      font-size: 12.5px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+    }
+    .group-a { background: #dbeafe; color: #1d4ed8; }
+    .group-b { background: #dcfce7; color: #15803d; }
+    .stop-title { font-size: 16.5px; font-weight: 800; color: #0f172a; line-height: 1.35; }
+    .stop-note { font-size: 14.5px; color: #334155; margin-top: 5px; line-height: 1.48; white-space: pre-line; }
+    .nav-go-btn {
+      background: #0284c7; color: #fff; border: none; border-radius: 8px;
+      padding: 7px 11px; font-size: 13.5px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+      text-decoration: none; display: inline-block;
     }
 
-    /* 可愛海龜游泳擺動動畫 */
-    @keyframes turtleSwim {
-      0%, 100% { transform: translateY(0px) rotate(-5deg); }
-      50% { transform: translateY(-2.5px) rotate(5deg); }
+    /* Info Pages (注意事項 / 當天出發時間排程) */
+    .info-page {
+      flex: 1; overflow-y: auto; padding: 14px; display: none; background: #f8fafc;
+    }
+    .info-page.active { display: block; }
+    .info-card {
+      background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 12px;
+      border: 1px solid var(--border); box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .info-time { font-size: 13.5px; font-weight: 800; color: #0284c7; margin-bottom: 4px; }
+    .info-title { font-size: 17px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    .info-body { font-size: 15px; color: #334155; line-height: 1.55; white-space: pre-line; }
+
+    /* Edit controls */
+    .edit-row { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .edit-input, .edit-textarea {
+      width: 100%; padding: 8px 10px; border: 1.5px solid #94a3b8; border-radius: 8px;
+      font-size: 15px; font-family: inherit; background: #fff;
+    }
+    .edit-textarea { min-height: 64px; resize: vertical; }
+    .edit-actions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .mini-btn {
+      padding: 6px 10px; border-radius: 7px; border: 1px solid #cbd5e1; background: #f1f5f9;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .mini-btn.pin { background: #fef3c7; border-color: #f59e0b; color: #92400e; }
+    .mini-btn.del { background: #fee2e2; border-color: #ef4444; color: #b91c1c; }
+    .add-item-btn {
+      width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #0284c7;
+      background: #e0f2fe; color: #0369a1; font-size: 15px; font-weight: 800; cursor: pointer;
+      margin-top: 6px;
     }
 
-    @keyframes pulseRing {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.65); }
-      70% { box-shadow: 0 0 0 11px rgba(16, 185, 129, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    /* Toast */
+    .toast {
+      position: fixed; top: 62px; left: 50%; transform: translateX(-50%);
+      background: rgba(15,23,42,0.92); color: #fff; padding: 8px 16px; border-radius: 20px;
+      font-size: 13.5px; font-weight: 700; z-index: 3000; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
     }
+    .toast.show { opacity: 1; }
 
-    .cute-turtle-swim {
-      animation: turtleSwim 2.2s ease-in-out infinite;
+    /* Password Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.6); z-index: 4000;
+      display: none; align-items: center; justify-content: center; padding: 20px;
     }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      width: 100%; max-width: 320px; background: #fff; border-radius: 16px; padding: 20px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3); text-align: center;
+    }
+    .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .modal-desc { font-size: 14px; color: #64748b; margin-bottom: 14px; }
+    .pin-input {
+      width: 100%; padding: 11px; font-size: 20px; text-align: center; letter-spacing: 6px;
+      border: 2px solid #cbd5e1; border-radius: 10px; margin-bottom: 8px;
+    }
+    .pin-err { color: #dc2626; font-size: 13.5px; font-weight: 700; min-height: 20px; margin-bottom: 10px; }
+    .modal-btns { display: flex; gap: 8px; }
+    .modal-btn {
+      flex: 1; padding: 10px; border-radius: 10px; border: none; font-size: 15px; font-weight: 800; cursor: pointer;
+    }
+    .modal-cancel { background: #e2e8f0; color: #334155; }
+    .modal-confirm { background: #0284c7; color: #fff; }
 
-    .turtle-badge-pulse {
-      animation: pulseRing 1.9s infinite;
+    /* Custom Markers */
+    .num-pin {
+      width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2.5px solid #0284c7;
+      color: #0f172a; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
     }
-
-    /* 地圖容器背景色與 Leaflet 控制項層級 */
-    .leaflet-container {
-      width: 100%;
-      height: 100%;
-      background-color: #aadaff;
-      font-family: 'Noto Sans TC', 'Inter', sans-serif;
-      z-index: 1;
+    .num-pin.done { background: #cbd5e1; border-color: #64748b; color: #475569; }
+    .turtle-wrap { position: relative; display: flex; align-items: center; }
+    .turtle-badge {
+      width: 59px; height: 58px; background: transparent; border: none; border-radius: 0;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.35)); animation: bob 1.6s ease-in-out infinite;
     }
-
-    .custom-pin-wrapper {
-      background: transparent;
-      border: none;
+    .turtle-badge img {
+      width: 100%; height: 100%; object-fit: contain; display: block;
     }
-
-    /* 精簡捲動條 */
-    .thin-scroll::-webkit-scrollbar {
-      width: 4px;
+    .turtle-label {
+      margin-left: 5px; background: #0f172a; color: #fff; font-size: 12px; font-weight: 800;
+      padding: 3px 8px; border-radius: 12px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    .thin-scroll::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
-      border-radius: 9999px;
-    }
-
-    /* 地圖點選座標準星光標 */
-    .map-pick-cursor,
-    .map-pick-cursor .leaflet-grab {
-      cursor: crosshair !important;
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    .island-text-label {
+      background: transparent; border: none; color: #0369a1; font-size: 11px; font-weight: 800;
+      text-shadow: 0 0 3px #fff, 0 0 3px #fff; white-space: nowrap;
     }
   </style>
 </head>
-<body class="w-screen h-[100dvh] overflow-hidden bg-[#0f172a] flex items-center justify-center">
-
-  <!-- 輕量提示浮標 -->
-  <div id="toastBanner" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] px-3.5 py-1.5 rounded-full bg-slate-900/95 text-white text-xs font-bold shadow-lg whitespace-nowrap pointer-events-none border border-slate-700">
-    已儲存並同步
-  </div>
-
-  <!-- 鎖定置中行動視角主容器（電腦與手機皆維持相同比例與外觀） -->
-  <div class="w-full max-w-[480px] h-[100dvh] md:h-[96dvh] md:rounded-3xl md:shadow-2xl md:border md:border-slate-700/80 bg-slate-50 overflow-hidden relative flex flex-col">
-
-    <!-- =====================================================================
-         頂部導覽列（44px 緊湊設計：☰ 選單、標題、同步燈號、✏️ 編輯、下一站 ➔）
-         ===================================================================== -->
-    <header class="shrink-0 h-[44px] px-2.5 bg-white border-b border-slate-200 flex items-center justify-between gap-1.5 z-[1500] relative">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <!-- 左上角 ☰ 選單按鈕 -->
-        <div id="menuContainer" class="relative shrink-0">
-          <button
-            id="menuBtn"
-            type="button"
-            aria-label="開啟選單"
-            aria-expanded="false"
-            class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 flex items-center justify-center text-base font-extrabold cursor-pointer select-none touch-manipulation"
-          >
-            ☰
-          </button>
-
-          <!-- 下拉選單（不含「分頁」字樣） -->
-          <div
-            id="menuDropdown"
-            role="menu"
-            class="hidden absolute left-0 top-10 w-52 rounded-2xl bg-white shadow-2xl border border-slate-200 py-1.5 overflow-hidden z-[1600]"
-          >
-            <button type="button" data-page="notes" class="menu-item w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:bg-teal-50 flex items-center justify-between cursor-pointer touch-manipulation">
-              <span>📋 注意事項</span>
-              <span class="check-mark hidden text-teal-600 font-extrabold">✓</span>
-            </button>
-            <button type="button" data-page="departure" class="menu-item w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:bg-teal-50 flex items-center justify-between cursor-pointer touch-manipulation">
-              <span>🚄 當天出發時間排程</span>
-              <span class="check-mark hidden text-teal-600 font-extrabold">✓</span>
-            </button>
-            <button type="button" data-page="day1" class="menu-item w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:bg-teal-50 flex items-center justify-between cursor-pointer touch-manipulation">
-              <span>🐢 day1時間排程</span>
-              <span class="check-mark hidden text-teal-600 font-extrabold">✓</span>
-            </button>
-            <button type="button" data-page="day2" class="menu-item w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:bg-teal-50 flex items-center justify-between cursor-pointer touch-manipulation">
-              <span>🏝️ day2時間排程</span>
-              <span class="check-mark hidden text-teal-600 font-extrabold">✓</span>
-            </button>
-            <button type="button" data-page="day3" class="menu-item w-full text-left px-3.5 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 active:bg-teal-50 flex items-center justify-between cursor-pointer touch-manipulation">
-              <span>⛴️ day3時間排程</span>
-              <span class="check-mark hidden text-teal-600 font-extrabold">✓</span>
-            </button>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="menu-btn" id="menuToggleBtn" aria-label="切換分頁">☰</button>
+        <div class="title-wrap">
+          <div class="app-title">
+            <span class="sync-dot" id="syncDot" title="本機模式"></span>
+            <span>趣小琉球三天兩夜15人</span>
           </div>
-        </div>
-
-        <!-- 同步狀態燈號 + 標題 + 當前視圖膠囊 -->
-        <div class="flex items-center gap-1 min-w-0">
-          <span
-            id="syncDot"
-            title="本機模式（背景連線雲端中）"
-            class="w-2 h-2 rounded-full bg-amber-400 shrink-0 transition-colors"
-          ></span>
-          <h1 class="text-[11px] font-extrabold text-slate-900 tracking-tight truncate">
-            趣小琉球三天兩夜15人
-          </h1>
-          <span
-            id="currentPagePill"
-            class="shrink-0 px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 text-[10px] font-extrabold"
-          >
-            day1時間排程
-          </span>
+          <div class="sub-view-name" id="currentViewLabel">day1時間排程</div>
         </div>
       </div>
-
-      <!-- 右側操作按鈕：✏️ 編輯 / ✅ 完成 + 下一站 ➔ -->
-      <div class="flex items-center gap-1 shrink-0">
-        <button
-          id="editToggleBtn"
-          type="button"
-          class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 text-[11px] font-extrabold leading-none border border-slate-200 transition cursor-pointer select-none touch-manipulation"
-        >
-          ✏️ 編輯
-        </button>
-
-        <button
-          id="nextBtn"
-          type="button"
-          class="px-2 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-[11px] font-bold leading-none shadow-2xs transition cursor-pointer select-none touch-manipulation"
-        >
-          下一站 ➔
-        </button>
+      <div class="topbar-right">
+        <button class="btn-sm btn-edit" id="editToggleBtn">✏️ 編輯</button>
+        <button class="btn-sm btn-next" id="nextStopBtn">下一站 ➔</button>
       </div>
     </header>
 
-    <!-- =====================================================================
-         視圖 1：行程地圖主畫面（上方 63% 小琉球全島地圖、下方 37% 路線清單）
-         ===================================================================== -->
-    <div id="viewRoute" class="flex-1 min-h-0 w-full flex flex-col-reverse overflow-hidden">
-      <!-- 下方 37% 路線面板 -->
-      <aside
-        id="panel"
-        aria-label="行程路線清單"
-        class="w-full shrink-0 h-[37%] bg-white border-t border-slate-200 flex flex-col z-20"
-      >
-        <!-- Day 3 方案快速切換列（僅在 day3時間排程 顯示） -->
-        <div id="day3PlanBar" class="hidden shrink-0 px-2 py-1.5 bg-indigo-50/90 border-b border-indigo-200 flex items-center gap-1.5">
-          <button
-            id="planABtn"
-            type="button"
-            class="flex-1 py-1 px-2 rounded-lg text-[10px] font-extrabold leading-tight transition cursor-pointer touch-manipulation"
-          >
-            🅰️ 方案A：東港海鮮午餐 (12:00/12:30船)
-          </button>
-          <button
-            id="planBBtn"
-            type="button"
-            class="flex-1 py-1 px-2 rounded-lg text-[10px] font-extrabold leading-tight transition cursor-pointer touch-manipulation"
-          >
-            🅱️ 方案B：小琉球午餐 (14:00/14:30船)
-          </button>
-        </div>
-
-        <!-- 編輯模式工具條 -->
-        <div id="routeEditToolbar" class="hidden shrink-0 px-2.5 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center justify-between gap-2">
-          <span id="pickCoordHint" class="text-[11px] font-bold text-amber-900 truncate">
-            編輯中：改名、時段或點📍設位置
-          </span>
-          <button
-            id="resetDayBtn"
-            type="button"
-            class="shrink-0 px-2 py-0.5 rounded bg-white hover:bg-amber-100 border border-amber-300 text-amber-800 text-[10px] font-extrabold cursor-pointer touch-manipulation"
-          >
-            還原預設
-          </button>
-        </div>
-
-        <!-- 站點緊湊捲動清單 -->
-        <div id="stopList" class="flex-1 min-h-0 overflow-y-auto thin-scroll p-1.5 space-y-1"></div>
-
-        <!-- 編輯模式底部新增站點按鈕 -->
-        <div id="routeAddFooter" class="hidden shrink-0 p-1.5 border-t border-slate-100 bg-slate-50">
-          <button
-            id="addStopBtn"
-            type="button"
-            class="w-full py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 active:scale-98 text-white text-xs font-extrabold shadow-2xs cursor-pointer touch-manipulation"
-          >
-            ＋ 新增站點
-          </button>
-        </div>
-      </aside>
-
-      <!-- 上方 63% 小琉球全島街道地圖 -->
-      <main
-        id="mapWrap"
-        aria-label="小琉球全島街道地圖"
-        class="relative w-full h-[63%] bg-[#aadaff]"
-      >
-        <div id="map" class="w-full h-full"></div>
-
-        <!-- 點選地圖座標提示浮條 -->
-        <div
-          id="mapPickBanner"
-          class="hidden absolute top-3 left-3 z-[1200] px-3 py-1.5 rounded-full bg-amber-500 text-white text-xs font-extrabold shadow-lg flex items-center gap-2"
-        >
-          <span id="mapPickBannerText">📍 請點擊地圖指定站點位置</span>
-          <button id="cancelPickBtn" type="button" class="underline text-[11px] font-bold cursor-pointer touch-manipulation">取消</button>
-        </div>
-
-        <!-- 右上角全島視角重置按鈕 -->
-        <button
-          id="fitIslandBtn"
-          type="button"
-          class="absolute top-3 right-3 z-[1200] px-3 py-1.5 rounded-full bg-white/95 hover:bg-white active:scale-95 text-slate-800 text-xs font-bold shadow-md border border-slate-200/90 flex items-center gap-1 cursor-pointer select-none touch-manipulation"
-        >
-          <span>🏝️</span>
-          <span>全島視角</span>
-        </button>
-      </main>
+    <div class="nav-dropdown" id="navDropdown" role="menu">
+      <button class="nav-item" data-view="notes">📋 注意事項</button>
+      <button class="nav-item" data-view="departure">🚄 當天出發時間排程</button>
+      <button class="nav-item active" data-view="day1">📅 day1時間排程</button>
+      <button class="nav-item" data-view="day2">📅 day2時間排程</button>
+      <button class="nav-item" data-view="day3">📅 day3時間排程</button>
     </div>
 
-    <!-- =====================================================================
-         視圖 2：注意事項（支援線上新增 / 編輯 / 排序 / 刪除）
-         ===================================================================== -->
-    <section id="viewNotes" class="hidden flex-1 min-h-0 w-full overflow-y-auto thin-scroll bg-slate-50 py-3.5 px-3">
-      <div class="space-y-3 pb-8">
-        <div class="rounded-2xl bg-teal-800 text-white p-3.5 shadow-sm flex items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-extrabold">📋 注意事項</h2>
-            <p class="text-[11px] text-teal-100 mt-0.5">點擊右上角「✏️ 編輯」即可自由新增或修改內容</p>
-          </div>
-          <button
-            id="resetNotesBtn"
-            type="button"
-            class="hidden shrink-0 px-2.5 py-1 rounded-lg bg-teal-900/80 hover:bg-teal-950 border border-teal-600 text-[11px] font-bold text-teal-100 cursor-pointer touch-manipulation"
-          >
-            還原預設
-          </button>
-        </div>
-
-        <div id="notesListContainer" class="space-y-2.5"></div>
-
-        <button
-          id="addNoteBtn"
-          type="button"
-          class="hidden w-full py-2.5 rounded-2xl border-2 border-dashed border-teal-500 bg-teal-50/70 hover:bg-teal-100/70 text-teal-800 text-xs font-extrabold cursor-pointer touch-manipulation"
-        >
-          ＋ 新增注意事項卡片
-        </button>
+    <!-- Map + Schedule Split View -->
+    <div class="map-schedule-wrap" id="mapScheduleWrap">
+      <div class="map-box">
+        <div id="map"></div>
+        <button class="map-float-btn" id="fitIslandBtn">🏝️ 全島視角</button>
+        <div class="pick-banner" id="pickBanner">📍 請點擊地圖設定此站位置</div>
       </div>
-    </section>
+      <div class="list-box" id="scheduleListContainer"></div>
+    </div>
 
-    <!-- =====================================================================
-         視圖 3：當天出發時間排程（支援線上新增 / 編輯 / 排序 / 刪除）
-         ===================================================================== -->
-    <section id="viewDeparture" class="hidden flex-1 min-h-0 w-full overflow-y-auto thin-scroll bg-slate-50 py-3.5 px-3">
-      <div class="space-y-3 pb-8">
-        <div class="rounded-2xl bg-blue-800 text-white p-3.5 shadow-sm flex items-center justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-extrabold">🚄 當天出發時間排程</h2>
-            <p class="text-[11px] text-blue-100 mt-0.5">點擊右上角「✏️ 編輯」可調整集合時間、班次與說明</p>
-          </div>
-          <button
-            id="resetDepartureBtn"
-            type="button"
-            class="hidden shrink-0 px-2.5 py-1 rounded-lg bg-blue-900/80 hover:bg-blue-950 border border-blue-600 text-[11px] font-bold text-blue-100 cursor-pointer touch-manipulation"
-          >
-            還原預設
-          </button>
-        </div>
-
-        <div id="departureListContainer" class="space-y-2.5"></div>
-
-        <button
-          id="addDepartureBtn"
-          type="button"
-          class="hidden w-full py-2.5 rounded-2xl border-2 border-dashed border-blue-500 bg-blue-50/70 hover:bg-blue-100/70 text-blue-800 text-xs font-extrabold cursor-pointer touch-manipulation"
-        >
-          ＋ 新增出發時程項目
-        </button>
-      </div>
-    </section>
-
+    <!-- Info View (注意事項 / 當天出發時間排程) -->
+    <div class="info-page" id="infoPageContainer"></div>
   </div>
 
-  <script>
-    (function () {
-      // 小琉球全島經緯度邊界
-      var ISLAND_BOUNDS = [
-        [22.3195, 120.3490],
-        [22.3595, 120.3930]
-      ];
+  <div class="toast" id="toastMsg">已儲存並同步</div>
 
-      // 5 個視圖名稱（不含「分頁」前綴）
-      var PAGE_LABELS = {
+  <!-- Hidden PIN Modal -->
+  <div class="modal-backdrop" id="pinModal">
+    <div class="modal-box">
+      <div class="modal-title">🔒 輸入管理密碼</div>
+      <div class="modal-desc">請輸入編輯權限密碼以修改行程</div>
+      <input type="password" inputmode="numeric" maxlength="8" class="pin-input" id="pinInput" autocomplete="off" />
+      <div class="pin-err" id="pinError"></div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-cancel" id="pinCancelBtn">取消</button>
+        <button class="modal-btn modal-confirm" id="pinConfirmBtn">確認解鎖</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    const EDIT_PIN = "3701";
+    const STORAGE_KEY = "xlq_15_trip_v5";
+
+    const DEFAULT_DATA = {
+      activeView: "day1",
+      day3Plan: "A",
+      currentIndex: { day1: 0, day2: 0, day3A: 0, day3B: 0 },
+      notes: [
+        { time: "出發前必帶", title: "🪪 實體證件隨身帶（勿放託運行李）", body: "Day 1 牽機車報到、玻璃船報到，以及 Day 3 澎坊免稅店結帳與碼頭提貨，都必須核對「身分證或健保卡」正本。" },
+        { time: "水上活動", title: "🩱 戲水裝備與防曬提醒", body: "建議攜帶泳衣/水母衣、毛巾、防水手機袋、暈船藥（搭船前30分鐘服用）、海洋友善防曬乳。" },
+        { time: "島上消費", title: "💵 現金準備（15人團）", body: "Day 1 晚餐「家興海鮮碳烤自助吧」及部分小吃、伴手禮店僅收現金，請先備妥足夠零錢與現金。" }
+      ],
+      departure: [
+        { time: "去程集合", title: "🚄 高鐵左營站 ➔ 東港碼頭", body: "全員準時於約定集合點會合，搭乘接駁車前往東港碼頭領取來回船票。" },
+        { time: "登船航程", title: "⛴️ 東港 ➔ 小琉球白沙尾觀光港", body: "開船前 20 分鐘完成排隊驗票，航程約 25～30 分鐘；抵達後先由民宿／車行引導領取機車並將大件行李送上行李車。" }
+      ],
+      day1: [
+        { phase: "第一階段：全員共同行動（12:00 – 13:50）", time: "12:00－12:45", group: "", title: "1. 小琉球香村滷味麵食館", note: "午餐時間（45分鐘），12:45 準時出發。", lat: 22.3456, lng: 120.3782 },
+        { phase: "", time: "12:50－13:10", group: "", title: "2. 杉福生態廊道 ＆ 福祿壽囍鯛魚燒", note: "騎車4分鐘抵達杉福總店外帶鯛魚燒、生態廊道拍照（停留約20分鐘）。", lat: 22.3418, lng: 120.3632 },
+        { phase: "", time: "13:10－13:25", group: "", title: "3. 回「謐之境」民宿放行李＆換裝", note: "12位獨木舟夥伴優先換好戲水服裝、全員上廁所拿證件，下午一路往北不折返！", lat: 22.3396, lng: 120.3665 },
+        { phase: "", time: "13:30－13:50", group: "", title: "4. 美人沙灘 ＆ 望海亭", note: "往北騎車4分鐘抵達，居高臨下找海龜拍照，13:50 準時離開前往分流點。", lat: 22.3492, lng: 120.3698 },
+        { phase: "第二階段：13:50 水上活動兩批分流", time: "14:20－15:10", group: "A", title: "5. 🚤 A組：玻璃船（3人｜14:30航班）", note: "14:20 白沙觀光碼頭 15 號攤位準時報到（必帶證件），14:30 出海航程約 40 分鐘。", lat: 22.3522, lng: 120.3818 },
+        { phase: "", time: "14:30－16:30", group: "B", title: "6. 🛶 B組：獨木舟（12人｜15:00場次）", note: "14:30 抵達集合點報到著裝（12人著裝較久務必準時），15:00 下水開划 ➔ 16:30 上岸。", lat: 22.3536, lng: 120.3842 },
+        { phase: "", time: "15:15－15:40", group: "A", title: "7. 🚤 A組：花瓶岩步道潮間帶 ＆ 夯 日式碳烤香魚", note: "A組下船後走東岸吃喝拍照線（約25分鐘）。", lat: 22.3554, lng: 120.3812 },
+        { phase: "", time: "15:45－16:05", group: "A", title: "8. 🚤 A組：龍蝦洞拍照", note: "天然珊瑚礁海蝕溝奇景拍照打卡。", lat: 22.3525, lng: 120.3892 },
+        { phase: "", time: "16:10－16:35", group: "A", title: "9. 🚤 A組：琉冰手作冰棒", note: "吃冰休息等 B 組上岸會合。", lat: 22.3488, lng: 120.3832 },
+        { phase: "第三階段：全體會合、BBQ晚餐與夜間活動", time: "16:45－17:45", group: "", title: "10. 回「謐之境」民宿梳洗休息、兩組會合", note: "全員回民宿沖洗換乾爽衣服休息。", lat: 22.3396, lng: 120.3665 },
+        { phase: "", time: "18:00－19:30", group: "", title: "11. 晚餐：家興海鮮碳烤自助吧", note: "炭火燒烤吃到飽（記得帶現金）。", lat: 22.3458, lng: 120.3752 },
+        { phase: "", time: "20:00 後", group: "", title: "12. 夜間自由活動（夜遊導覽／包棟民宿聚會）", note: "可參加夜間生態導覽、市區逛街或在民宿包棟聚會。", lat: 22.3495, lng: 120.3802 }
+      ],
+      day2: [
+        { phase: "上午：水上活動分流（08:15 – 11:15）", time: "08:30－10:30", group: "A", title: "1. 🤿 A組：深潛體驗（6人）", note: "08:30 報到教學 ➔ 下水體驗 ➔ 約 10:30 上岸沖洗，回「謐之境」換乾衣服。", lat: 22.3532, lng: 120.3826 },
+        { phase: "", time: "08:30－10:00", group: "B", title: "2. 🥽 B組：浮潛找海龜（9人）", note: "08:30 報到著裝 ➔ 下水找海龜 ➔ 約 10:00 上岸沖洗，回「謐之境」換乾衣服。", lat: 22.3515, lng: 120.3712 },
+        { phase: "中午：午餐與順時針環島景點", time: "11:30－12:30", group: "", title: "3. 午餐：梨小龍 或 相思麵", note: "11:15 兩組會合出發！若吃相思麵，請 B 組派 2 人 11:10 先去佔位。", lat: 22.3422, lng: 120.3745 },
+        { phase: "", time: "12:45－13:10", group: "", title: "4. 百年老榕樹（＆ 白燈塔）", note: "樹蔭乘涼拍照，順遊旁邊白色燈塔。", lat: 22.3338, lng: 120.3748 },
+        { phase: "", time: "13:15－13:45", group: "", title: "5. 厚石魚澳（拍大合照）", note: "天然礁岩圍成的秘境海灣，15人必拍大合照。", lat: 22.3268, lng: 120.3718 },
+        { phase: "", time: "13:50－14:35", group: "", title: "6. 海找冰", note: "海景第一排吃冰吹海風休息。", lat: 22.3238, lng: 120.3665 },
+        { phase: "", time: "14:40－14:50", group: "", title: "7. 紅番石", note: "路邊奇岩合影留念。", lat: 22.3248, lng: 120.3618 },
+        { phase: "", time: "15:00－15:45", group: "", title: "8. 小本愛玉 小琉球旗艦店", note: "必點海龜造型愛玉＋吹冷氣消暑。", lat: 22.3315, lng: 120.3622 },
+        { phase: "", time: "15:50－16:45", group: "", title: "9. 蛤板灣 威尼斯沙灘", note: "下午光線最美、貝殼沙灘踩水踏浪。", lat: 22.3372, lng: 120.3612 },
+        { phase: "傍晚：夕陽海景晚餐", time: "17:00－17:30", group: "", title: "10. 回「謐之境」稍作整理／換穿搭", note: "補防曬、換美美穿搭準備看夕陽晚餐。", lat: 22.3396, lng: 120.3665 },
+        { phase: "", time: "17:30－19:30", group: "", title: "11. 晚餐：Sea Daze Liuqiu 或 餐海館", note: "17:30 入座看西岸海景夕陽享用晚餐。", lat: 22.3435, lng: 120.3642 }
+      ],
+      day3A: [
+        { phase: "🅰️ 方案A：回東港吃海鮮午餐（搭 12:00 或 12:30 船班）", time: "09:00－09:45", group: "", title: "1. 起床整理、退房寄行李", note: "請民宿載行李至碼頭，身分證／健保卡務必留身上！", lat: 22.3396, lng: 120.3665 },
+        { phase: "", time: "09:50－10:25", group: "", title: "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店", note: "伴手禮第一站取貨與採買。", lat: 22.3452, lng: 120.3775 },
+        { phase: "", time: "10:35－11:00", group: "", title: "3. 澎坊小琉球白沙港店（免稅店）", note: "⚠️ 務必於「開船前 1 小時」完成結帳！（12:00船➔11:00前；12:30船➔11:30前）", lat: 22.3518, lng: 120.3812 },
+        { phase: "", time: "11:00－11:30", group: "", title: "4. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店", note: "購買現烤手撕魷魚與海龜棒棒糖伴手禮。", lat: 22.3495, lng: 120.3802 },
+        { phase: "", time: "11:30－12:00", group: "", title: "5. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港", note: "憑身分證件於碼頭免稅提貨處領取商品後登船。", lat: 22.3522, lng: 120.3818 },
+        { phase: "", time: "12:30－14:00", group: "", title: "6. 東港午餐（華僑市場生魚片黑輪 或 海產餐廳）", note: "15人聚餐享用東港新鮮海產。", lat: 22.4645, lng: 120.4452 }
+      ],
+      day3B: [
+        { phase: "🅱️ 方案B：在小琉球吃午餐（搭 14:00 或 14:30 船班）", time: "09:30－10:30", group: "", title: "1. 睡飽起床、退房寄行李", note: "請民宿載行李至碼頭，身分證／健保卡務必留身上！", lat: 22.3396, lng: 120.3665 },
+        { phase: "", time: "10:40－11:20", group: "", title: "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店", note: "伴手禮第一站取貨與採買。", lat: 22.3452, lng: 120.3775 },
+        { phase: "", time: "11:30－12:30", group: "", title: "3. 午餐：白沙碼頭商圈（高記在地小吃／筑安心等）", note: "在小琉球市區享用在地午餐。", lat: 22.3502, lng: 120.3808 },
+        { phase: "", time: "12:30－13:00", group: "", title: "4. 澎坊小琉球白沙港店（免稅店）", note: "⚠️ 務必於「開船前 1 小時」完成結帳！（14:00船➔13:00前；14:30船➔13:30前）", lat: 22.3518, lng: 120.3812 },
+        { phase: "", time: "13:00－13:30", group: "", title: "5. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店", note: "購買現烤手撕魷魚與海龜棒棒糖伴手禮。", lat: 22.3495, lng: 120.3802 },
+        { phase: "", time: "13:30－14:00", group: "", title: "6. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港", note: "憑身分證件於碼頭免稅提貨處領取商品後登船返程。", lat: 22.3522, lng: 120.3818 }
+      ]
+    };
+
+    let state = loadLocalState();
+    let isEditing = false;
+    let isUnlocked = false;
+    let pickingIndex = null;
+    let map, routeLayer, markersLayer;
+
+    function loadLocalState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return Object.assign({}, DEFAULT_DATA, parsed);
+        }
+      } catch (e) {}
+      return JSON.parse(JSON.stringify(DEFAULT_DATA));
+    }
+
+    function saveState(pushCloud = true) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+      showToast("已儲存並同步");
+      if (pushCloud && window._syncToFirebase) {
+        window._syncToFirebase(state);
+      }
+    }
+
+    function showToast(msg) {
+      const el = document.getElementById("toastMsg");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+    }
+
+    function getActiveScheduleKey() {
+      if (state.activeView === "day1") return "day1";
+      if (state.activeView === "day2") return "day2";
+      if (state.activeView === "day3") return state.day3Plan === "B" ? "day3B" : "day3A";
+      return null;
+    }
+
+    /* Init Map */
+    function initMap() {
+      const islandBounds = [[22.318, 120.354], [22.360, 120.396]];
+      map = L.map("map", { zoomControl: true, attributionControl: false }).fitBounds(islandBounds);
+
+      const tileSources = [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+        "https://tile.openstreetmap.de/{z}/{x}/{y}.png"
+      ];
+      let tileIdx = 0;
+      const tileLayer = L.tileLayer(tileSources[0], { maxZoom: 18 }).addTo(map);
+      tileLayer.on("tileerror", () => {
+        if (tileIdx + 1 < tileSources.length) {
+          tileIdx++;
+          tileLayer.setUrl(tileSources[tileIdx]);
+        }
+      });
+
+      /* Built-in Xiaoliuqiu Island Polygon & Roads so island shape is always crystal clear */
+      const coastline = [
+        [22.3556, 120.3812], [22.3532, 120.3888], [22.3465, 120.3875],
+        [22.3375, 120.3822], [22.3282, 120.3752], [22.3228, 120.3695],
+        [22.3238, 120.3612], [22.3315, 120.3605], [22.3412, 120.3618],
+        [22.3495, 120.3692], [22.3538, 120.3765]
+      ];
+      L.polygon(coastline, {
+        color: "#0284c7", weight: 2.5, fillColor: "#dcfce7", fillOpacity: 0.45
+      }).addTo(map);
+
+      const ringRoad = [
+        [22.3522, 120.3812], [22.3515, 120.3875], [22.3448, 120.3852],
+        [22.3358, 120.3792], [22.3268, 120.3718], [22.3248, 120.3628],
+        [22.3325, 120.3622], [22.3418, 120.3635], [22.3492, 120.3702],
+        [22.3522, 120.3812]
+      ];
+      L.polyline(ringRoad, { color: "#f59e0b", weight: 2.5, opacity: 0.75 }).addTo(map);
+
+      const landmarks = [
+        { lat: 22.3528, lng: 120.3820, text: "白沙尾港" },
+        { lat: 22.3492, lng: 120.3695, text: "美人洞" },
+        { lat: 22.3372, lng: 120.3610, text: "蛤板灣" },
+        { lat: 22.3265, lng: 120.3718, text: "厚石魚澳" }
+      ];
+      landmarks.forEach(lm => {
+        L.marker([lm.lat, lm.lng], {
+          interactive: false,
+          icon: L.divIcon({ className: "island-text-label", html: lm.text, iconSize: [60, 16] })
+        }).addTo(map);
+      });
+
+      routeLayer = L.layerGroup().addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+
+      map.on("click", (e) => {
+        if (pickingIndex === null) return;
+        const key = getActiveScheduleKey();
+        if (!key) return;
+        state[key][pickingIndex].lat = Number(e.latlng.lat.toFixed(5));
+        state[key][pickingIndex].lng = Number(e.latlng.lng.toFixed(5));
+        pickingIndex = null;
+        document.getElementById("pickBanner").classList.remove("show");
+        saveState(true);
+        renderAll();
+      });
+    }
+
+    function fitIslandView() {
+      if (!map) return;
+      map.fitBounds([[22.318, 120.354], [22.360, 120.396]], { padding: [12, 12] });
+    }
+
+    function renderMap() {
+      if (!map) return;
+      routeLayer.clearLayers();
+      markersLayer.clearLayers();
+      const key = getActiveScheduleKey();
+      if (!key) return;
+      const list = state[key] || [];
+      const curIdx = Math.min(state.currentIndex[key] || 0, Math.max(0, list.length - 1));
+
+      const coords = list.map(s => [s.lat, s.lng]);
+      if (coords.length > 1) {
+        L.polyline(coords, { color: "#64748b", weight: 3, dashArray: "6,6", opacity: 0.8 }).addTo(routeLayer);
+        if (curIdx > 0) {
+          L.polyline(coords.slice(0, curIdx + 1), { color: "#0284c7", weight: 4.5 }).addTo(routeLayer);
+        }
+      }
+
+      list.forEach((stop, idx) => {
+        if (idx === curIdx) {
+          const shortTitle = stop.title.replace(/^\d+\.\s*/, "");
+          const turtleIcon = L.divIcon({
+            className: "",
+            html: `<div class="turtle-wrap"><div class="turtle-badge"><img src="data:image/png;base64,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" alt="騎車位置" /></div><div class="turtle-label">${shortTitle}</div></div>`,
+            iconSize: [209, 58],
+            iconAnchor: [29, 29]
+          });
+          L.marker([stop.lat, stop.lng], { icon: turtleIcon, zIndexOffset: 1000 })
+            .addTo(markersLayer)
+            .on("click", () => selectStop(idx));
+        } else {
+          const pinIcon = L.divIcon({
+            className: "",
+            html: `<div class="num-pin ${idx < curIdx ? "done" : ""}">${idx + 1}</div>`,
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+          });
+          L.marker([stop.lat, stop.lng], { icon: pinIcon })
+            .addTo(markersLayer)
+            .on("click", () => selectStop(idx));
+        }
+      });
+    }
+
+    function selectStop(idx) {
+      const key = getActiveScheduleKey();
+      if (!key) return;
+      state.currentIndex[key] = idx;
+      saveState(true);
+      renderAll();
+    }
+
+    function renderScheduleList() {
+      const container = document.getElementById("scheduleListContainer");
+      container.innerHTML = "";
+      const key = getActiveScheduleKey();
+      if (!key) return;
+
+      if (state.activeView === "day3") {
+        const bar = document.createElement("div");
+        bar.className = "plan-switch-bar";
+        const btnA = document.createElement("button");
+        btnA.className = "plan-btn" + (state.day3Plan === "A" ? " active" : "");
+        btnA.textContent = "🅰️ 方案A（東港午餐）";
+        btnA.addEventListener("click", () => {
+          state.day3Plan = "A";
+          saveState(true);
+          renderAll();
+        });
+        const btnB = document.createElement("button");
+        btnB.className = "plan-btn" + (state.day3Plan === "B" ? " active" : "");
+        btnB.textContent = "🅱️ 方案B（小琉球午餐）";
+        btnB.addEventListener("click", () => {
+          state.day3Plan = "B";
+          saveState(true);
+          renderAll();
+        });
+        bar.appendChild(btnA);
+        bar.appendChild(btnB);
+        container.appendChild(bar);
+      }
+
+      const list = state[key] || [];
+      const curIdx = Math.min(state.currentIndex[key] || 0, Math.max(0, list.length - 1));
+
+      list.forEach((item, idx) => {
+        if (item.phase) {
+          const div = document.createElement("div");
+          div.className = "phase-divider";
+          div.textContent = item.phase;
+          container.appendChild(div);
+        }
+
+        const card = document.createElement("div");
+        card.className = "stop-card" + (idx === curIdx ? " current" : "");
+        if (idx === curIdx) card.id = "activeStopCard";
+
+        if (!isEditing) {
+          card.addEventListener("click", () => selectStop(idx));
+          const top = document.createElement("div");
+          top.className = "stop-top";
+
+          const main = document.createElement("div");
+          main.className = "stop-main";
+
+          const meta = document.createElement("div");
+          meta.className = "stop-meta";
+          if (item.time) {
+            const tb = document.createElement("span");
+            tb.className = "time-badge";
+            tb.textContent = item.time;
+            meta.appendChild(tb);
+          }
+          if (item.group === "A") {
+            const gb = document.createElement("span");
+            gb.className = "group-badge group-a";
+            gb.textContent = "🚤 A組";
+            meta.appendChild(gb);
+          } else if (item.group === "B") {
+            const gb = document.createElement("span");
+            gb.className = "group-badge group-b";
+            gb.textContent = "🛶 B組";
+            meta.appendChild(gb);
+          }
+          main.appendChild(meta);
+
+          const title = document.createElement("div");
+          title.className = "stop-title";
+          title.textContent = item.title;
+          main.appendChild(title);
+
+          if (item.note) {
+            const note = document.createElement("div");
+            note.className = "stop-note";
+            note.textContent = item.note;
+            main.appendChild(note);
+          }
+
+          const navLink = document.createElement("a");
+          navLink.className = "nav-go-btn";
+          navLink.textContent = "導航";
+          navLink.href = `https://www.google.com/maps/search/?api=1&query=${item.lat},${item.lng}`;
+          navLink.target = "_blank";
+          navLink.rel = "noopener";
+          navLink.addEventListener("click", (e) => e.stopPropagation());
+
+          top.appendChild(main);
+          top.appendChild(navLink);
+          card.appendChild(top);
+        } else {
+          const editRow = document.createElement("div");
+          editRow.className = "edit-row";
+
+          const timeIn = document.createElement("input");
+          timeIn.className = "edit-input";
+          timeIn.value = item.time || "";
+          timeIn.placeholder = "時間（如 12:00－12:45）";
+          timeIn.addEventListener("input", () => { item.time = timeIn.value; });
+
+          const titleIn = document.createElement("input");
+          titleIn.className = "edit-input";
+          titleIn.value = item.title || "";
+          titleIn.placeholder = "站點名稱";
+          titleIn.addEventListener("input", () => { item.title = titleIn.value; });
+
+          const noteIn = document.createElement("textarea");
+          noteIn.className = "edit-textarea";
+          noteIn.value = item.note || "";
+          noteIn.placeholder = "說明備註";
+          noteIn.addEventListener("input", () => { item.note = noteIn.value; });
+
+          const acts = document.createElement("div");
+          acts.className = "edit-actions";
+
+          const pinBtn = document.createElement("button");
+          pinBtn.className = "mini-btn pin";
+          pinBtn.textContent = pickingIndex === idx ? "🎯 點擊上方地圖..." : "📍 地圖設位置";
+          pinBtn.addEventListener("click", () => {
+            pickingIndex = idx;
+            document.getElementById("pickBanner").classList.add("show");
+            renderScheduleList();
+          });
+
+          const upBtn = document.createElement("button");
+          upBtn.className = "mini-btn";
+          upBtn.textContent = "↑ 上移";
+          upBtn.addEventListener("click", () => {
+            if (idx > 0) {
+              [list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
+              renderScheduleList();
+              renderMap();
+            }
+          });
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "mini-btn del";
+          delBtn.textContent = "🗑️ 刪除";
+          delBtn.addEventListener("click", () => {
+            list.splice(idx, 1);
+            renderScheduleList();
+            renderMap();
+          });
+
+          acts.appendChild(pinBtn);
+          acts.appendChild(upBtn);
+          acts.appendChild(delBtn);
+
+          editRow.appendChild(timeIn);
+          editRow.appendChild(titleIn);
+          editRow.appendChild(noteIn);
+          editRow.appendChild(acts);
+          card.appendChild(editRow);
+        }
+
+        container.appendChild(card);
+      });
+
+      if (isEditing) {
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-item-btn";
+        addBtn.textContent = "＋ 新增行程站點";
+        addBtn.addEventListener("click", () => {
+          list.push({ phase: "", time: "待定", group: "", title: "新站點", note: "", lat: 22.345, lng: 120.375 });
+          renderScheduleList();
+          renderMap();
+        });
+        container.appendChild(addBtn);
+      }
+    }
+
+    function renderInfoPage() {
+      const container = document.getElementById("infoPageContainer");
+      container.innerHTML = "";
+      const key = state.activeView;
+      if (key !== "notes" && key !== "departure") return;
+      const items = state[key] || [];
+
+      items.forEach((item, idx) => {
+        const card = document.createElement("div");
+        card.className = "info-card";
+        if (!isEditing) {
+          if (item.time) {
+            const t = document.createElement("div");
+            t.className = "info-time";
+            t.textContent = item.time;
+            card.appendChild(t);
+          }
+          const h = document.createElement("div");
+          h.className = "info-title";
+          h.textContent = item.title;
+          card.appendChild(h);
+
+          const b = document.createElement("div");
+          b.className = "info-body";
+          b.textContent = item.body;
+          card.appendChild(b);
+        } else {
+          const row = document.createElement("div");
+          row.className = "edit-row";
+
+          const timeIn = document.createElement("input");
+          timeIn.className = "edit-input";
+          timeIn.value = item.time || "";
+          timeIn.placeholder = "標籤／時段";
+          timeIn.addEventListener("input", () => { item.time = timeIn.value; });
+
+          const titleIn = document.createElement("input");
+          titleIn.className = "edit-input";
+          titleIn.value = item.title || "";
+          titleIn.placeholder = "標題";
+          titleIn.addEventListener("input", () => { item.title = titleIn.value; });
+
+          const bodyIn = document.createElement("textarea");
+          bodyIn.className = "edit-textarea";
+          bodyIn.value = item.body || "";
+          bodyIn.placeholder = "詳細內容";
+          bodyIn.addEventListener("input", () => { item.body = bodyIn.value; });
+
+          const delBtn = document.createElement("button");
+          delBtn.className = "mini-btn del";
+          delBtn.textContent = "🗑️ 刪除此卡片";
+          delBtn.addEventListener("click", () => {
+            items.splice(idx, 1);
+            renderInfoPage();
+          });
+
+          row.appendChild(timeIn);
+          row.appendChild(titleIn);
+          row.appendChild(bodyIn);
+          row.appendChild(delBtn);
+          card.appendChild(row);
+        }
+        container.appendChild(card);
+      });
+
+      if (isEditing) {
+        const addBtn = document.createElement("button");
+        addBtn.className = "add-item-btn";
+        addBtn.textContent = "＋ 新增卡片";
+        addBtn.addEventListener("click", () => {
+          items.push({ time: "新增項目", title: "標題", body: "內容說明" });
+          renderInfoPage();
+        });
+        container.appendChild(addBtn);
+      }
+    }
+
+    function renderAll() {
+      const labels = {
         notes: "注意事項",
         departure: "當天出發時間排程",
         day1: "day1時間排程",
         day2: "day2時間排程",
         day3: "day3時間排程"
       };
+      document.getElementById("currentViewLabel").textContent = labels[state.activeView] || "day1時間排程";
 
-      // 建立完整預設行程與注意事項資料（含精準時段、水上活動與小琉球 GPS 座標）
-      function createDefaultData() {
-        var day3PlanA = [
-          {
-            name: "1. 起床整理、退房寄行李",
-            time: "09:00 – 09:45",
-            phase: "🅰️ 方案A：回東港吃海鮮午餐（搭 12:00 或 12:30 船班）",
-            group: "all",
-            note: "請民宿載行李至碼頭，實體證件務必留身上！",
-            isWaterActivity: false,
-            lat: 22.3396,
-            lng: 120.3654
-          },
-          {
-            name: "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
-            time: "09:50 – 10:25",
-            phase: "",
-            group: "all",
-            note: "伴手禮第一站取貨＋採買",
-            isWaterActivity: false,
-            lat: 22.3468,
-            lng: 120.3792
-          },
-          {
-            name: "3. 澎坊小琉球白沙港店（免稅店）",
-            time: "10:35 – 11:00",
-            phase: "",
-            group: "all",
-            note: "⚠️ 務必於「開船前 1 小時」完成結帳（12:00船➔11:00前；12:30船➔11:30前，核對證件）！",
-            isWaterActivity: false,
-            lat: 22.3532,
-            lng: 120.3815
-          },
-          {
-            name: "4. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
-            time: "11:00 – 11:30",
-            phase: "",
-            group: "all",
-            note: "中山店採買手撕魷魚與海龜棒棒糖",
-            isWaterActivity: false,
-            lat: 22.3506,
-            lng: 120.3816
-          },
-          {
-            name: "5. 還機車、領行李、碼頭免稅提貨處領商品",
-            time: "11:30 – 12:00",
-            phase: "",
-            group: "all",
-            note: "登船返東港（12:00 或 12:30 船班）",
-            isWaterActivity: false,
-            lat: 22.3538,
-            lng: 120.3818
-          },
-          {
-            name: "6. 東港午餐：華僑市場生魚片黑輪 或 東港海產餐廳",
-            time: "12:30 – 14:00",
-            phase: "",
-            group: "all",
-            note: "15人回東港大啖海鮮聚餐（東港華僑市場）",
-            isWaterActivity: false,
-            lat: 22.4648,
-            lng: 120.4435
-          }
-        ];
+      document.querySelectorAll(".nav-item").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.view === state.activeView);
+      });
 
-        var day3PlanB = [
-          {
-            name: "1. 睡飽起床、退房寄行李",
-            time: "09:30 – 10:30",
-            phase: "🅱️ 方案B：在小琉球吃午餐（搭 14:00 或 14:30 船班）",
-            group: "all",
-            note: "請民宿載行李至碼頭，實體證件留身上！",
-            isWaterActivity: false,
-            lat: 22.3396,
-            lng: 120.3654
-          },
-          {
-            name: "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
-            time: "10:40 – 11:20",
-            phase: "",
-            group: "all",
-            note: "伴手禮第一站取貨＋採買",
-            isWaterActivity: false,
-            lat: 22.3468,
-            lng: 120.3792
-          },
-          {
-            name: "3. 午餐：白沙碼頭商圈（高記在地小吃／筑安心等）",
-            time: "11:30 – 12:30",
-            phase: "",
-            group: "all",
-            note: "碼頭周邊午餐",
-            isWaterActivity: false,
-            lat: 22.3518,
-            lng: 120.3815
-          },
-          {
-            name: "4. 澎坊小琉球白沙港店（免稅店）",
-            time: "12:30 – 13:00",
-            phase: "",
-            group: "all",
-            note: "⚠️ 務必於「開船前 1 小時」完成結帳（14:00船➔13:00前；14:30船➔13:30前，核對證件）！",
-            isWaterActivity: false,
-            lat: 22.3532,
-            lng: 120.3815
-          },
-          {
-            name: "5. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
-            time: "13:00 – 13:30",
-            phase: "",
-            group: "all",
-            note: "中山店採買伴手禮",
-            isWaterActivity: false,
-            lat: 22.3506,
-            lng: 120.3816
-          },
-          {
-            name: "6. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港",
-            time: "13:30 – 14:00",
-            phase: "",
-            group: "all",
-            note: "14:00 或 14:30 船班返東港",
-            isWaterActivity: false,
-            lat: 22.3538,
-            lng: 120.3818
-          }
-        ];
+      const editBtn = document.getElementById("editToggleBtn");
+      editBtn.textContent = isEditing ? "✅ 完成" : "✏️ 編輯";
+      editBtn.classList.toggle("active", isEditing);
 
-        return {
-          notes: [
-            {
-              title: "🪪 實體證件隨身帶（勿放託運行李）",
-              content: "Day 1 牽機車報到、Day 3 澎坊免稅店結帳與碼頭提貨，都必須核對「身分證或健保卡」，普通重型機車駕照正本亦請隨身攜帶。"
-            },
-            {
-              title: "🩱 Day 1 換裝與現金提醒",
-              content: "1. 13:10 先回「謐之境」民宿放行李換裝（12位獨木舟夥伴優先換好戲水服裝，下午一路往北不折返）。\n2. 晚餐「家興海鮮碳烤自助吧」記得帶現金。\n3. 請優先使用海洋友善防曬乳，保護海龜與珊瑚生態。"
-            },
-            {
-              title: "🤿 Day 2 午餐與會合提醒",
-              content: "1. 深潛(6人)與浮潛(9人) 08:30 報到，11:15 回「謐之境」梳洗換乾衣服會合。\n2. 若午餐選相思麵，請 B 組派 2 人 11:10 先去佔位。"
-            },
-            {
-              title: "🛍️ Day 3 免稅店與行李托運",
-              content: "1. 退房請民宿載行李至碼頭（實體證件務必留身上！）。\n2. 澎坊免稅店務必於「開船前 1 小時」完成結帳，並於碼頭免稅提貨處領取商品。"
-            }
-          ],
-          departure: [
-            {
-              time: "階段 1 · 集合出發",
-              title: "高鐵桃園站出發（15人集合點名）",
-              content: "確認全員隨身攜帶身分證或健保卡、普通重型機車駕照正本與暈船藥，搭車南下。"
-            },
-            {
-              time: "階段 2 · 接駁前往東港",
-              title: "左營高鐵站轉乘 9127D 台灣好行／接駁車",
-              content: "前往東港東琉線交通船碼頭（車程約 45～50 分鐘）。"
-            },
-            {
-              time: "階段 3 · 碼頭取票登船",
-              title: "東港碼頭核對證件取票搭船",
-              content: "排隊登船前往小琉球白沙尾港（航程約 25～30 分鐘）。"
-            },
-            {
-              time: "11:30 · 登島領車",
-              title: "抵達白沙尾港＆牽機車 ➔ 12:00 小琉球香村滷味麵食館",
-              content: "核對駕照完成領車後，12:00 準時前往小琉球香村滷味麵食館用餐！"
-            }
-          ],
-          day3Plan: "A",
-          day3Plans: {
-            A: day3PlanA,
-            B: day3PlanB
-          },
-          routes: {
-            day1: [
-              {
-                name: "1. 小琉球香村滷味麵食館",
-                time: "12:00 – 12:45",
-                phase: "DAY 1｜登島美食 × 北岸巡禮（全員共同行動）",
-                group: "all",
-                note: "午餐時間（12:45 準時出發）",
-                isWaterActivity: false,
-                lat: 22.3489,
-                lng: 120.3812
-              },
-              {
-                name: "2. 杉福生態廊道 ＆ 福祿壽囍鯛魚燒",
-                time: "12:50 – 13:10",
-                phase: "",
-                group: "all",
-                note: "杉福總店外帶鯛魚燒、生態廊道拍照",
-                isWaterActivity: false,
-                lat: 22.3408,
-                lng: 120.3632
-              },
-              {
-                name: "3. 回「謐之境」民宿放行李＆換裝",
-                time: "13:10 – 13:25",
-                phase: "",
-                group: "all",
-                note: "12位獨木舟夥伴優先換好戲水服裝，下午一路往北不折返",
-                isWaterActivity: false,
-                lat: 22.3396,
-                lng: 120.3654
-              },
-              {
-                name: "4. 美人沙灘 ＆ 望海亭",
-                time: "13:30 – 13:50",
-                phase: "",
-                group: "all",
-                note: "拍照兼居高臨下找海龜（13:50 準時離開前往分流點）",
-                isWaterActivity: false,
-                lat: 22.3526,
-                lng: 120.3712
-              },
-              {
-                name: "5. [A組 玻璃船 3人] 白沙觀光碼頭 15 號攤位報到",
-                time: "14:20 – 15:10",
-                phase: "🌊 13:50 – 16:30【水上活動分流】玻璃船(3)／獨木舟(12)",
-                group: "groupA",
-                note: "14:20 準時報到（必帶證件），14:30 航班出海約 40 分鐘",
-                isWaterActivity: true,
-                lat: 22.3538,
-                lng: 120.3818
-              },
-              {
-                name: "6. [B組 獨木舟 12人] 獨木舟集合點報到＆下水開划",
-                time: "14:30 – 16:30",
-                phase: "",
-                group: "groupB",
-                note: "14:30 報到著裝（12人著裝較久務必準時），15:00 開划 ➔ 16:30 上岸",
-                isWaterActivity: true,
-                lat: 22.3545,
-                lng: 120.3848
-              },
-              {
-                name: "7. [A組 玻璃船 3人] 花瓶岩潮間帶 ＆ 夯 日式碳烤香魚",
-                time: "15:10 – 15:40",
-                phase: "",
-                group: "groupA",
-                note: "下船後東岸吃喝拍照第一站",
-                isWaterActivity: false,
-                lat: 22.3556,
-                lng: 120.3806
-              },
-              {
-                name: "8. [A組 玻璃船 3人] 龍蝦洞 ＆ 琉冰手作冰棒",
-                time: "15:45 – 16:35",
-                phase: "",
-                group: "groupA",
-                note: "龍蝦洞拍照＋琉冰吃冰休息等 B 組",
-                isWaterActivity: false,
-                lat: 22.3474,
-                lng: 120.3886
-              },
-              {
-                name: "9. 回「謐之境」民宿梳洗休息、兩組會合",
-                time: "16:45 – 17:45",
-                phase: "🌙 夜間會合、炭火晚餐與自由活動",
-                group: "all",
-                note: "兩組會合梳洗休息",
-                isWaterActivity: false,
-                lat: 22.3396,
-                lng: 120.3654
-              },
-              {
-                name: "10. 晚餐：家興海鮮碳烤自助吧",
-                time: "18:00 – 19:30",
-                phase: "",
-                group: "all",
-                note: "15人炭火燒烤聚餐（記得帶現金）",
-                isWaterActivity: false,
-                lat: 22.3452,
-                lng: 120.3788
-              },
-              {
-                name: "11. 夜間自由活動",
-                time: "20:00 後",
-                phase: "",
-                group: "all",
-                note: "夜遊導覽／包棟民宿聚會",
-                isWaterActivity: false,
-                lat: 22.3498,
-                lng: 120.3825
-              }
-            ],
-            day2: [
-              {
-                name: "1. [A組 深潛 6人] 深潛報到教學 ➔ 下水體驗",
-                time: "08:30 – 10:30",
-                phase: "🌊 08:15 – 11:15【水上活動分流】深潛(6)／浮潛(9)",
-                group: "groupA",
-                note: "08:30 報到教學 ➔ 下水體驗 ➔ 約 10:30 上岸沖洗",
-                isWaterActivity: true,
-                lat: 22.3542,
-                lng: 120.3835
-              },
-              {
-                name: "2. [B組 浮潛 9人] 浮潛報到著裝 ➔ 下水找海龜",
-                time: "08:30 – 10:00",
-                phase: "",
-                group: "groupB",
-                note: "08:30 報到著裝 ➔ 下水找海龜 ➔ 約 10:00 上岸沖洗",
-                isWaterActivity: true,
-                lat: 22.3522,
-                lng: 120.3718
-              },
-              {
-                name: "3. 回「謐之境」梳洗換乾衣服＆會合",
-                time: "10:30 – 11:15",
-                phase: "",
-                group: "all",
-                note: "兩組各自回民宿梳洗換乾衣服，11:15 會合出發！",
-                isWaterActivity: false,
-                lat: 22.3396,
-                lng: 120.3654
-              },
-              {
-                name: "4. 午餐：梨小龍 或 相思麵",
-                time: "11:30 – 12:30",
-                phase: "🏝️ 順時針環島美食、景點與冰品",
-                group: "all",
-                note: "若吃相思麵，請 B 組派 2 人 11:10 先去佔位",
-                isWaterActivity: false,
-                lat: 22.3432,
-                lng: 120.3765
-              },
-              {
-                name: "5. 百年老榕樹（＆ 白燈塔）",
-                time: "12:45 – 13:10",
-                phase: "",
-                group: "all",
-                note: "順時針環島高點地標拍照",
-                isWaterActivity: false,
-                lat: 22.3318,
-                lng: 120.3738
-              },
-              {
-                name: "6. 厚石魚澳",
-                time: "13:15 – 13:45",
-                phase: "",
-                group: "all",
-                note: "天然珊瑚礁海灣拍 15 人大合照",
-                isWaterActivity: false,
-                lat: 22.3264,
-                lng: 120.3712
-              },
-              {
-                name: "7. 海找冰",
-                time: "13:50 – 14:35",
-                phase: "",
-                group: "all",
-                note: "海景第一排吃冰吹風",
-                isWaterActivity: false,
-                lat: 22.3248,
-                lng: 120.3688
-              },
-              {
-                name: "8. 紅番石",
-                time: "14:40 – 14:50",
-                phase: "",
-                group: "all",
-                note: "路邊奇岩合影",
-                isWaterActivity: false,
-                lat: 22.3238,
-                lng: 120.3642
-              },
-              {
-                name: "9. 小本愛玉 小琉球旗艦店",
-                time: "15:00 – 15:45",
-                phase: "",
-                group: "all",
-                note: "海龜愛玉＋吹冷氣休息",
-                isWaterActivity: false,
-                lat: 22.3268,
-                lng: 120.3602
-              },
-              {
-                name: "10. 蛤板灣 威尼斯沙灘",
-                time: "15:50 – 16:45",
-                phase: "",
-                group: "all",
-                note: "下午光線最美、踩水踏浪",
-                isWaterActivity: false,
-                lat: 22.3338,
-                lng: 120.3588
-              },
-              {
-                name: "11. 回「謐之境」稍作整理／補防曬換穿搭",
-                time: "17:00 – 17:30",
-                phase: "🌅 傍晚整理與海景夕陽晚餐",
-                group: "all",
-                note: "稍作整理準備看夕陽吃晚餐",
-                isWaterActivity: false,
-                lat: 22.3396,
-                lng: 120.3654
-              },
-              {
-                name: "12. 晚餐：Sea Daze Liuqiu 或 餐海館",
-                time: "17:30 – 19:30",
-                phase: "",
-                group: "all",
-                note: "17:30 入座看西岸海景夕陽",
-                isWaterActivity: false,
-                lat: 22.3422,
-                lng: 120.3628
-              }
-            ],
-            day3: JSON.parse(JSON.stringify(day3PlanA))
-          },
-          currentIndexByDay: {
-            day1: 0,
-            day2: 0,
-            day3: 0
-          }
-        };
+      const isSchedule = ["day1", "day2", "day3"].includes(state.activeView);
+      document.getElementById("mapScheduleWrap").style.display = isSchedule ? "flex" : "none";
+      document.getElementById("nextStopBtn").style.display = isSchedule ? "inline-flex" : "none";
+      document.getElementById("infoPageContainer").classList.toggle("active", !isSchedule);
+
+      if (isSchedule) {
+        renderScheduleList();
+        renderMap();
+        setTimeout(() => { if (map) map.invalidateSize(); }, 50);
+      } else {
+        renderInfoPage();
       }
+    }
 
-      var STORAGE_KEY = "xlq_trip_v6";
-      var appData = createDefaultData();
+    /* Events */
+    document.getElementById("menuToggleBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      document.getElementById("navDropdown").classList.toggle("open");
+    });
 
-      // 嘗試讀取本機快取狀態
-      try {
-        var raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          var parsed = JSON.parse(raw);
-          if (parsed && typeof parsed === "object") {
-            if (Array.isArray(parsed.notes)) appData.notes = parsed.notes;
-            if (Array.isArray(parsed.departure)) appData.departure = parsed.departure;
-            if (parsed.day3Plan === "A" || parsed.day3Plan === "B") {
-              appData.day3Plan = parsed.day3Plan;
-            }
-            if (parsed.day3Plans && typeof parsed.day3Plans === "object") {
-              if (Array.isArray(parsed.day3Plans.A) && parsed.day3Plans.A.length > 0) {
-                appData.day3Plans.A = parsed.day3Plans.A;
-              }
-              if (Array.isArray(parsed.day3Plans.B) && parsed.day3Plans.B.length > 0) {
-                appData.day3Plans.B = parsed.day3Plans.B;
-              }
-            }
-            if (parsed.routes && typeof parsed.routes === "object") {
-              ["day1", "day2", "day3"].forEach(function (d) {
-                if (Array.isArray(parsed.routes[d]) && parsed.routes[d].length > 0) {
-                  appData.routes[d] = parsed.routes[d];
-                }
-              });
-            }
-            if (parsed.currentIndexByDay && typeof parsed.currentIndexByDay === "object") {
-              ["day1", "day2", "day3"].forEach(function (d) {
-                var idx = parseInt(parsed.currentIndexByDay[d], 10);
-                if (!isNaN(idx) && idx >= 0) {
-                  appData.currentIndexByDay[d] = Math.min(idx, appData.routes[d].length - 1);
-                }
-              });
-            }
-          }
-        }
-      } catch (e) {}
+    document.addEventListener("click", () => {
+      document.getElementById("navDropdown").classList.remove("open");
+    });
 
-      var activePage = "day1";
-      var isEditMode = false;
-      var pickingStopIndex = null;
+    document.querySelectorAll(".nav-item").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.activeView = btn.dataset.view;
+        document.getElementById("navDropdown").classList.remove("open");
+        renderAll();
+      });
+    });
 
-      // DOM 元素參照
-      var menuContainer = document.getElementById("menuContainer");
-      var menuBtn = document.getElementById("menuBtn");
-      var menuDropdown = document.getElementById("menuDropdown");
-      var currentPagePill = document.getElementById("currentPagePill");
-      var editToggleBtn = document.getElementById("editToggleBtn");
-      var nextBtn = document.getElementById("nextBtn");
-      var fitIslandBtn = document.getElementById("fitIslandBtn");
-      var stopListEl = document.getElementById("stopList");
-      var day3PlanBar = document.getElementById("day3PlanBar");
-      var planABtn = document.getElementById("planABtn");
-      var planBBtn = document.getElementById("planBBtn");
-      var routeEditToolbar = document.getElementById("routeEditToolbar");
-      var routeAddFooter = document.getElementById("routeAddFooter");
-      var mapWrapEl = document.getElementById("mapWrap");
-      var mapPickBanner = document.getElementById("mapPickBanner");
-      var mapPickBannerText = document.getElementById("mapPickBannerText");
+    document.getElementById("fitIslandBtn").addEventListener("click", fitIslandView);
 
-      var viewRoute = document.getElementById("viewRoute");
-      var viewNotes = document.getElementById("viewNotes");
-      var viewDeparture = document.getElementById("viewDeparture");
+    document.getElementById("nextStopBtn").addEventListener("click", () => {
+      const key = getActiveScheduleKey();
+      if (!key) return;
+      const list = state[key] || [];
+      if (!list.length) return;
+      state.currentIndex[key] = ((state.currentIndex[key] || 0) + 1) % list.length;
+      saveState(true);
+      renderAll();
+      const activeEl = document.getElementById("activeStopCard");
+      if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
 
-      // Toast 輕量訊息提示
-      var toastTimer = null;
-      function showToast(msg) {
-        var el = document.getElementById("toastBanner");
-        if (!el) return;
-        el.textContent = msg;
-        el.classList.remove("hidden");
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(function () {
-          el.classList.add("hidden");
-        }, 2000);
+    /* Edit Lock with Hidden PIN 3701 */
+    document.getElementById("editToggleBtn").addEventListener("click", () => {
+      if (isEditing) {
+        isEditing = false;
+        pickingIndex = null;
+        document.getElementById("pickBanner").classList.remove("show");
+        saveState(true);
+        renderAll();
+        return;
       }
+      if (isUnlocked) {
+        isEditing = true;
+        renderAll();
+      } else {
+        document.getElementById("pinInput").value = "";
+        document.getElementById("pinError").textContent = "";
+        document.getElementById("pinModal").classList.add("open");
+        setTimeout(() => document.getElementById("pinInput").focus(), 60);
+      }
+    });
 
-      // 儲存至 localStorage 並推播 Firebase Firestore
-      var syncPushTimer = null;
-      var pushCloudFn = null;
+    document.getElementById("pinCancelBtn").addEventListener("click", () => {
+      document.getElementById("pinModal").classList.remove("open");
+    });
 
-      function persistAndSync(immediateCloud) {
-        // 同步更新當前 day3Plan 的備份副本，確保方案切換時保留使用者編輯
-        if (appData.day3Plans && (appData.day3Plan === "A" || appData.day3Plan === "B")) {
-          appData.day3Plans[appData.day3Plan] = appData.routes.day3;
-        }
+    function verifyPin() {
+      const val = document.getElementById("pinInput").value.trim();
+      if (val === EDIT_PIN) {
+        isUnlocked = true;
+        isEditing = true;
+        document.getElementById("pinModal").classList.remove("open");
+        renderAll();
+      } else {
+        document.getElementById("pinError").textContent = "❌ 密碼錯誤，請重新輸入";
+        document.getElementById("pinInput").value = "";
+        document.getElementById("pinInput").focus();
+      }
+    }
 
+    document.getElementById("pinConfirmBtn").addEventListener("click", verifyPin);
+    document.getElementById("pinInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") verifyPin();
+    });
+
+    initMap();
+    renderAll();
+  </script>
+
+  <!-- Firebase Realtime Sync Module -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      projectId: "project-4310350545072047895",
+      appId: "1:4310350545072047895:web:xlq15group"
+    };
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const tripDocRef = doc(db, "trips", "xiaoliuqiu-15-group");
+      let ignoreNextSnapshot = false;
+
+      window._syncToFirebase = async (latestState) => {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-        } catch (e) {}
-
-        if (typeof pushCloudFn === "function") {
-          clearTimeout(syncPushTimer);
-          if (immediateCloud) {
-            pushCloudFn(appData);
-          } else {
-            syncPushTimer = setTimeout(function () {
-              pushCloudFn(appData);
-            }, 350);
-          }
-        }
-      }
-
-      function isRoutePage(pageId) {
-        return pageId === "day1" || pageId === "day2" || pageId === "day3";
-      }
-
-      // 判斷是否為水上活動項目
-      function detectWaterActivity(stop) {
-        if (!stop) return false;
-        if (stop.isWaterActivity === true) return true;
-        var nameStr = String(stop.name || "");
-        return (
-          nameStr.indexOf("水上活動") !== -1 ||
-          nameStr.indexOf("玻璃船") !== -1 ||
-          nameStr.indexOf("獨木舟") !== -1 ||
-          nameStr.indexOf("深潛") !== -1 ||
-          nameStr.indexOf("浮潛") !== -1 ||
-          nameStr.indexOf("A組") !== -1 ||
-          nameStr.indexOf("B組") !== -1
-        );
-      }
-
-      // 取得分流群組視覺樣式（all / groupA / groupB）
-      function getGroupMeta(stop) {
-        var g = stop && stop.group ? stop.group : "";
-        var nameStr = String((stop && stop.name) || "");
-        if (g === "groupA" || nameStr.indexOf("A組") !== -1) {
-          return { key: "groupA", badge: "🚤 A組", pillBg: "bg-sky-700 text-white", cardBg: "bg-sky-50/90 hover:bg-sky-100/70 border-sky-200", noteColor: "text-sky-900" };
-        }
-        if (g === "groupB" || nameStr.indexOf("B組") !== -1) {
-          return { key: "groupB", badge: "🛶 B組", pillBg: "bg-teal-700 text-white", cardBg: "bg-teal-50/90 hover:bg-teal-100/70 border-teal-200", noteColor: "text-teal-900" };
-        }
-        return { key: "all", badge: "", pillBg: "bg-slate-100 text-slate-700", cardBg: "bg-white hover:bg-slate-50 border-slate-100", noteColor: "text-slate-500" };
-      }
-
-      // 更新 Day 3 方案切換列外觀與顯示狀態
-      function updateDay3PlanBarUI() {
-        if (activePage === "day3") {
-          day3PlanBar.classList.remove("hidden");
-        } else {
-          day3PlanBar.classList.add("hidden");
-          return;
-        }
-
-        var isA = appData.day3Plan !== "B";
-        if (isA) {
-          planABtn.className = "flex-1 py-1 px-2 rounded-lg bg-indigo-600 text-white text-[10px] font-extrabold leading-tight shadow-2xs transition cursor-pointer touch-manipulation";
-          planBBtn.className = "flex-1 py-1 px-2 rounded-lg bg-white hover:bg-indigo-100/70 text-indigo-900 border border-indigo-200 text-[10px] font-bold leading-tight transition cursor-pointer touch-manipulation";
-        } else {
-          planABtn.className = "flex-1 py-1 px-2 rounded-lg bg-white hover:bg-indigo-100/70 text-indigo-900 border border-indigo-200 text-[10px] font-bold leading-tight transition cursor-pointer touch-manipulation";
-          planBBtn.className = "flex-1 py-1 px-2 rounded-lg bg-indigo-600 text-white text-[10px] font-extrabold leading-tight shadow-2xs transition cursor-pointer touch-manipulation";
-        }
-      }
-
-      function switchDay3Plan(targetPlan) {
-        if (targetPlan !== "A" && targetPlan !== "B") return;
-        if (appData.day3Plan === targetPlan) return;
-
-        // 先保存目前方案下的站點清單
-        var currentPlan = appData.day3Plan === "B" ? "B" : "A";
-        appData.day3Plans[currentPlan] = appData.routes.day3;
-
-        // 切換至目標方案
-        appData.day3Plan = targetPlan;
-        if (!Array.isArray(appData.day3Plans[targetPlan]) || appData.day3Plans[targetPlan].length === 0) {
-          appData.day3Plans[targetPlan] = createDefaultData().day3Plans[targetPlan];
-        }
-        appData.routes.day3 = appData.day3Plans[targetPlan];
-        appData.currentIndexByDay.day3 = 0;
-
-        cancelMapPicking();
-        persistAndSync(true);
-        updateDay3PlanBarUI();
-        renderStopList();
-        renderMapMarkers();
-        fitIslandView();
-        showToast(targetPlan === "A" ? "已切換至 🅰️ 方案A（東港海鮮午餐）" : "已切換至 🅱️ 方案B（小琉球午餐）");
-      }
-
-      planABtn.addEventListener("click", function () {
-        switchDay3Plan("A");
-      });
-
-      planBBtn.addEventListener("click", function () {
-        switchDay3Plan("B");
-      });
-
-      // =====================================================================
-      // 1. 左上角選單開關與 5 視圖切換
-      // =====================================================================
-      function closeMenu() {
-        menuDropdown.classList.add("hidden");
-        menuBtn.setAttribute("aria-expanded", "false");
-      }
-
-      menuBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        var isHidden = menuDropdown.classList.contains("hidden");
-        if (isHidden) {
-          menuDropdown.classList.remove("hidden");
-          menuBtn.setAttribute("aria-expanded", "true");
-        } else {
-          closeMenu();
-        }
-      });
-
-      document.addEventListener("click", function (e) {
-        if (menuContainer && !menuContainer.contains(e.target)) {
-          closeMenu();
-        }
-      });
-
-      function cancelMapPicking() {
-        pickingStopIndex = null;
-        mapWrapEl.classList.remove("map-pick-cursor");
-        mapPickBanner.classList.add("hidden");
-      }
-
-      function updateEditModeUI() {
-        if (isEditMode) {
-          editToggleBtn.textContent = "✅ 完成";
-          editToggleBtn.className = "px-2 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[11px] font-extrabold leading-none shadow-2xs transition cursor-pointer select-none touch-manipulation";
-        } else {
-          cancelMapPicking();
-          editToggleBtn.textContent = "✏️ 編輯";
-          editToggleBtn.className = "px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 text-[11px] font-extrabold leading-none border border-slate-200 transition cursor-pointer select-none touch-manipulation";
-        }
-
-        updateDay3PlanBarUI();
-
-        if (isRoutePage(activePage) && isEditMode) {
-          routeEditToolbar.classList.remove("hidden");
-          routeAddFooter.classList.remove("hidden");
-        } else {
-          routeEditToolbar.classList.add("hidden");
-          routeAddFooter.classList.add("hidden");
-        }
-
-        var addNoteBtn = document.getElementById("addNoteBtn");
-        var resetNotesBtn = document.getElementById("resetNotesBtn");
-        if (activePage === "notes" && isEditMode) {
-          addNoteBtn.classList.remove("hidden");
-          resetNotesBtn.classList.remove("hidden");
-        } else {
-          addNoteBtn.classList.add("hidden");
-          resetNotesBtn.classList.add("hidden");
-        }
-
-        var addDepBtn = document.getElementById("addDepartureBtn");
-        var resetDepBtn = document.getElementById("resetDepartureBtn");
-        if (activePage === "departure" && isEditMode) {
-          addDepBtn.classList.remove("hidden");
-          resetDepBtn.classList.remove("hidden");
-        } else {
-          addDepBtn.classList.add("hidden");
-          resetDepBtn.classList.add("hidden");
-        }
-      }
-
-      function renderActivePage() {
-        updateEditModeUI();
-        if (activePage === "notes") {
-          renderNotesView();
-        } else if (activePage === "departure") {
-          renderDepartureView();
-        } else {
-          renderStopList();
-          renderMapMarkers();
-        }
-      }
-
-      function switchPage(pageId) {
-        if (!PAGE_LABELS[pageId]) return;
-        activePage = pageId;
-        cancelMapPicking();
-        currentPagePill.textContent = PAGE_LABELS[pageId];
-
-        if (isRoutePage(pageId)) {
-          viewRoute.classList.remove("hidden");
-          viewNotes.classList.add("hidden");
-          viewDeparture.classList.add("hidden");
-          nextBtn.classList.remove("hidden");
-        } else if (pageId === "notes") {
-          viewRoute.classList.add("hidden");
-          viewNotes.classList.remove("hidden");
-          viewDeparture.classList.add("hidden");
-          nextBtn.classList.add("hidden");
-        } else if (pageId === "departure") {
-          viewRoute.classList.add("hidden");
-          viewNotes.classList.add("hidden");
-          viewDeparture.classList.remove("hidden");
-          nextBtn.classList.add("hidden");
-        }
-
-        var menuButtons = document.querySelectorAll(".menu-item");
-        for (var i = 0; i < menuButtons.length; i++) {
-          var btn = menuButtons[i];
-          var isMatch = btn.getAttribute("data-page") === pageId;
-          var check = btn.querySelector(".check-mark");
-          if (isMatch) {
-            btn.classList.add("bg-teal-50/80", "text-teal-800");
-            if (check) check.classList.remove("hidden");
-          } else {
-            btn.classList.remove("bg-teal-50/80", "text-teal-800");
-            if (check) check.classList.add("hidden");
-          }
-        }
-
-        closeMenu();
-        renderActivePage();
-
-        if (isRoutePage(pageId)) {
-          setTimeout(function () {
-            fitIslandView();
-          }, 50);
-        }
-      }
-
-      var menuItems = document.querySelectorAll(".menu-item");
-      for (var m = 0; m < menuItems.length; m++) {
-        (function (btn) {
-          btn.addEventListener("click", function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            switchPage(btn.getAttribute("data-page"));
-          });
-        })(menuItems[m]);
-      }
-
-      editToggleBtn.addEventListener("click", function (e) {
-        e.preventDefault();
-        isEditMode = !isEditMode;
-        if (!isEditMode) {
-          persistAndSync(true);
-          showToast("✅ 已儲存編輯內容");
-        }
-        renderActivePage();
-        if (isRoutePage(activePage)) {
-          setTimeout(fitIslandView, 60);
-        }
-      });
-
-      // =====================================================================
-      // 2. 注意事項視圖（純 DOM 建構 + addEventListener）
-      // =====================================================================
-      function renderNotesView() {
-        var container = document.getElementById("notesListContainer");
-        container.innerHTML = "";
-
-        if (appData.notes.length === 0) {
-          var emptyDiv = document.createElement("div");
-          emptyDiv.className = "rounded-2xl bg-white border border-slate-200 p-6 text-center text-xs text-slate-400";
-          emptyDiv.textContent = "尚無注意事項，請點右上角「✏️ 編輯」新增";
-          container.appendChild(emptyDiv);
-          return;
-        }
-
-        appData.notes.forEach(function (item, idx) {
-          var card = document.createElement("div");
-          card.className = "rounded-2xl bg-white border border-slate-200 p-3.5 shadow-2xs space-y-2";
-
-          if (!isEditMode) {
-            var h3 = document.createElement("h3");
-            h3.className = "text-sm font-extrabold text-slate-900";
-            h3.textContent = item.title || "未命名項目";
-            card.appendChild(h3);
-
-            var bodyWrap = document.createElement("div");
-            bodyWrap.className = "space-y-1";
-            var lines = (item.content || "").split("\n").filter(function (l) {
-              return l.trim() !== "";
-            });
-            lines.forEach(function (line) {
-              var p = document.createElement("p");
-              p.className = "text-xs text-slate-600 leading-relaxed";
-              p.textContent = line;
-              bodyWrap.appendChild(p);
-            });
-            card.appendChild(bodyWrap);
-          } else {
-            var topBar = document.createElement("div");
-            topBar.className = "flex items-center justify-between gap-1.5";
-
-            var titleInput = document.createElement("input");
-            titleInput.type = "text";
-            titleInput.value = item.title || "";
-            titleInput.placeholder = "輸入標題（例如：🪪 證件準備）";
-            titleInput.className = "flex-1 min-w-0 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs font-extrabold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none";
-            titleInput.addEventListener("input", function () {
-              appData.notes[idx].title = titleInput.value;
-              persistAndSync(false);
-            });
-
-            var actions = document.createElement("div");
-            actions.className = "flex items-center gap-1 shrink-0";
-
-            var upBtn = document.createElement("button");
-            upBtn.type = "button";
-            upBtn.textContent = "↑";
-            upBtn.title = "上移";
-            upBtn.className = "w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer touch-manipulation";
-            upBtn.addEventListener("click", function () {
-              if (idx > 0) {
-                var tmp = appData.notes[idx - 1];
-                appData.notes[idx - 1] = appData.notes[idx];
-                appData.notes[idx] = tmp;
-                persistAndSync(true);
-                renderNotesView();
-              }
-            });
-
-            var downBtn = document.createElement("button");
-            downBtn.type = "button";
-            downBtn.textContent = "↓";
-            downBtn.title = "下移";
-            downBtn.className = "w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer touch-manipulation";
-            downBtn.addEventListener("click", function () {
-              if (idx < appData.notes.length - 1) {
-                var tmp = appData.notes[idx + 1];
-                appData.notes[idx + 1] = appData.notes[idx];
-                appData.notes[idx] = tmp;
-                persistAndSync(true);
-                renderNotesView();
-              }
-            });
-
-            var delBtn = document.createElement("button");
-            delBtn.type = "button";
-            delBtn.textContent = "🗑️";
-            delBtn.title = "刪除";
-            delBtn.className = "w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-600 cursor-pointer touch-manipulation";
-            delBtn.addEventListener("click", function () {
-              appData.notes.splice(idx, 1);
-              persistAndSync(true);
-              renderNotesView();
-            });
-
-            actions.appendChild(upBtn);
-            actions.appendChild(downBtn);
-            actions.appendChild(delBtn);
-
-            topBar.appendChild(titleInput);
-            topBar.appendChild(actions);
-
-            var textarea = document.createElement("textarea");
-            textarea.rows = 3;
-            textarea.value = item.content || "";
-            textarea.placeholder = "輸入詳細內容（可換行）";
-            textarea.className = "w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-700 leading-relaxed focus:bg-white focus:border-teal-600 focus:outline-none";
-            textarea.addEventListener("input", function () {
-              appData.notes[idx].content = textarea.value;
-              persistAndSync(false);
-            });
-
-            card.appendChild(topBar);
-            card.appendChild(textarea);
-          }
-
-          container.appendChild(card);
-        });
-      }
-
-      document.getElementById("addNoteBtn").addEventListener("click", function () {
-        appData.notes.push({
-          title: "📌 新增注意事項",
-          content: "請輸入提醒內容..."
-        });
-        persistAndSync(true);
-        renderNotesView();
-      });
-
-      document.getElementById("resetNotesBtn").addEventListener("click", function () {
-        appData.notes = createDefaultData().notes;
-        persistAndSync(true);
-        renderNotesView();
-        showToast("已還原預設注意事項");
-      });
-
-      // =====================================================================
-      // 3. 當天出發時間排程視圖（純 DOM 建構 + addEventListener）
-      // =====================================================================
-      function renderDepartureView() {
-        var container = document.getElementById("departureListContainer");
-        container.innerHTML = "";
-
-        if (appData.departure.length === 0) {
-          var emptyDiv = document.createElement("div");
-          emptyDiv.className = "rounded-2xl bg-white border border-slate-200 p-6 text-center text-xs text-slate-400";
-          emptyDiv.textContent = "尚無出發排程，請點右上角「✏️ 編輯」新增";
-          container.appendChild(emptyDiv);
-          return;
-        }
-
-        appData.departure.forEach(function (item, idx) {
-          var card = document.createElement("div");
-          card.className = "rounded-2xl bg-white border border-slate-200 p-3.5 shadow-2xs";
-
-          if (!isEditMode) {
-            var wrap = document.createElement("div");
-            wrap.className = "border-l-2 border-blue-600 pl-3 space-y-0.5";
-
-            var timeDiv = document.createElement("div");
-            timeDiv.className = "text-[11px] font-extrabold text-blue-600";
-            timeDiv.textContent = item.time || "";
-
-            var titleDiv = document.createElement("div");
-            titleDiv.className = "text-sm font-extrabold text-slate-900";
-            titleDiv.textContent = item.title || "未命名行程";
-
-            wrap.appendChild(timeDiv);
-            wrap.appendChild(titleDiv);
-
-            if (item.content) {
-              var p = document.createElement("p");
-              p.className = "text-xs text-slate-600 leading-relaxed pt-0.5";
-              p.textContent = item.content;
-              wrap.appendChild(p);
-            }
-
-            card.appendChild(wrap);
-          } else {
-            var editWrap = document.createElement("div");
-            editWrap.className = "space-y-2";
-
-            var topBar = document.createElement("div");
-            topBar.className = "flex items-center justify-between gap-1.5";
-
-            var timeInput = document.createElement("input");
-            timeInput.type = "text";
-            timeInput.value = item.time || "";
-            timeInput.placeholder = "時間（例如：07:30 高鐵站集合）";
-            timeInput.className = "flex-1 min-w-0 px-2.5 py-1 rounded-lg bg-blue-50/70 border border-blue-200 text-[11px] font-extrabold text-blue-800 focus:bg-white focus:border-blue-600 focus:outline-none";
-            timeInput.addEventListener("input", function () {
-              appData.departure[idx].time = timeInput.value;
-              persistAndSync(false);
-            });
-
-            var actions = document.createElement("div");
-            actions.className = "flex items-center gap-1 shrink-0";
-
-            var upBtn = document.createElement("button");
-            upBtn.type = "button";
-            upBtn.textContent = "↑";
-            upBtn.title = "上移";
-            upBtn.className = "w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer touch-manipulation";
-            upBtn.addEventListener("click", function () {
-              if (idx > 0) {
-                var tmp = appData.departure[idx - 1];
-                appData.departure[idx - 1] = appData.departure[idx];
-                appData.departure[idx] = tmp;
-                persistAndSync(true);
-                renderDepartureView();
-              }
-            });
-
-            var downBtn = document.createElement("button");
-            downBtn.type = "button";
-            downBtn.textContent = "↓";
-            downBtn.title = "下移";
-            downBtn.className = "w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 cursor-pointer touch-manipulation";
-            downBtn.addEventListener("click", function () {
-              if (idx < appData.departure.length - 1) {
-                var tmp = appData.departure[idx + 1];
-                appData.departure[idx + 1] = appData.departure[idx];
-                appData.departure[idx] = tmp;
-                persistAndSync(true);
-                renderDepartureView();
-              }
-            });
-
-            var delBtn = document.createElement("button");
-            delBtn.type = "button";
-            delBtn.textContent = "🗑️";
-            delBtn.title = "刪除";
-            delBtn.className = "w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-600 cursor-pointer touch-manipulation";
-            delBtn.addEventListener("click", function () {
-              appData.departure.splice(idx, 1);
-              persistAndSync(true);
-              renderDepartureView();
-            });
-
-            actions.appendChild(upBtn);
-            actions.appendChild(downBtn);
-            actions.appendChild(delBtn);
-
-            topBar.appendChild(timeInput);
-            topBar.appendChild(actions);
-
-            var titleInput = document.createElement("input");
-            titleInput.type = "text";
-            titleInput.value = item.title || "";
-            titleInput.placeholder = "標題（例如：左營站轉乘接駁車）";
-            titleInput.className = "w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs font-extrabold text-slate-900 focus:bg-white focus:border-blue-600 focus:outline-none";
-            titleInput.addEventListener("input", function () {
-              appData.departure[idx].title = titleInput.value;
-              persistAndSync(false);
-            });
-
-            var textarea = document.createElement("textarea");
-            textarea.rows = 2;
-            textarea.value = item.content || "";
-            textarea.placeholder = "補充說明（車次、碼頭、注意事項）";
-            textarea.className = "w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-300 text-xs text-slate-700 leading-relaxed focus:bg-white focus:border-blue-600 focus:outline-none";
-            textarea.addEventListener("input", function () {
-              appData.departure[idx].content = textarea.value;
-              persistAndSync(false);
-            });
-
-            editWrap.appendChild(topBar);
-            editWrap.appendChild(titleInput);
-            editWrap.appendChild(textarea);
-            card.appendChild(editWrap);
-          }
-
-          container.appendChild(card);
-        });
-      }
-
-      document.getElementById("addDepartureBtn").addEventListener("click", function () {
-        appData.departure.push({
-          time: "新增時段",
-          title: "新增集合／交通項目",
-          content: ""
-        });
-        persistAndSync(true);
-        renderDepartureView();
-      });
-
-      document.getElementById("resetDepartureBtn").addEventListener("click", function () {
-        appData.departure = createDefaultData().departure;
-        persistAndSync(true);
-        renderDepartureView();
-        showToast("已還原預設出發排程");
-      });
-
-      // =====================================================================
-      // 4. Leaflet 小琉球全島地圖與可愛游泳海龜標記
-      // =====================================================================
-      var map = null;
-      var fullRouteLine = null;
-      var activeSegmentLine = null;
-      var mapMarkers = [];
-
-      // 內建高解析小琉球海岸線多邊形與環島公路向量圖層（確保離線或任何沙盒環境皆能清晰顯示完整小琉球輪廓與路網）
-      var XIAOLIUQIU_COASTLINE = [
-        [22.3558, 120.3806], // 花瓶岩北端
-        [22.3548, 120.3824], // 白沙尾觀光碼頭
-        [22.3532, 120.3846], // 中澳沙灘
-        [22.3502, 120.3872], // 龍蝦洞北側
-        [22.3474, 120.3889], // 龍蝦洞
-        [22.3435, 120.3876], // 旭日亭海岸
-        [22.3392, 120.3852], // 大福漁港北側
-        [22.3356, 120.3828], // 大福漁港
-        [22.3312, 120.3792], // 琉球嶼東南岸
-        [22.3274, 120.3746], // 厚石群礁東側
-        [22.3256, 120.3712], // 厚石魚澳
-        [22.3238, 120.3676], // 海找冰海岸
-        [22.3230, 120.3642], // 紅番石／觀音石
-        [22.3236, 120.3602], // 海子口漁港
-        [22.3258, 120.3574], // 落日亭南側
-        [22.3292, 120.3568], // 落日亭西岸
-        [22.3338, 120.3586], // 蛤板灣威尼斯沙灘
-        [22.3378, 120.3612], // 烏鬼洞海岸
-        [22.3412, 120.3628], // 杉福漁港／杉福生態廊道
-        [22.3456, 120.3652], // 肚仔坪潮間帶
-        [22.3498, 120.3684], // 山豬溝西岸
-        [22.3526, 120.3712], // 美人沙灘／望海亭
-        [22.3544, 120.3756]  // 美人洞北岸
-      ];
-
-      // 內建小琉球主要環島公路與中正路／民生路網
-      var XIAOLIUQIU_ROADS = [
-        // 環島公路主線
-        [
-          [22.3542, 120.3812],
-          [22.3526, 120.3836],
-          [22.3484, 120.3866],
-          [22.3432, 120.3858],
-          [22.3364, 120.3814],
-          [22.3282, 120.3736],
-          [22.3248, 120.3672],
-          [22.3252, 120.3608],
-          [22.3302, 120.3584],
-          [22.3352, 120.3604],
-          [22.3406, 120.3644],
-          [22.3468, 120.3676],
-          [22.3518, 120.3718],
-          [22.3538, 120.3768],
-          [22.3542, 120.3812]
-        ],
-        // 島中央幹道（中山路－中正路－復安路貫穿線）
-        [
-          [22.3536, 120.3815],
-          [22.3492, 120.3814],
-          [22.3446, 120.3782],
-          [22.3396, 120.3728],
-          [22.3338, 120.3722],
-          [22.3274, 120.3688]
-        ],
-        // 杉福往市區橫向聯絡道（相思埔路／復興路）
-        [
-          [22.3406, 120.3644],
-          [22.3418, 120.3708],
-          [22.3446, 120.3782]
-        ]
-      ];
-
-      function addXiaoliuqiuBaseVectorLayer(targetMap) {
-        // 小琉球島嶼陸地輪廓與沙灘海岸邊界
-        L.polygon(XIAOLIUQIU_COASTLINE, {
-          color: "#0284c7",
-          weight: 2.5,
-          opacity: 0.85,
-          fillColor: "#dcfce7",
-          fillOpacity: 0.62,
-          interactive: false
-        }).addTo(targetMap);
-
-        // 環島與島內主要道路網
-        XIAOLIUQIU_ROADS.forEach(function (roadCoords) {
-          L.polyline(roadCoords, {
-            color: "#ffffff",
-            weight: 3,
-            opacity: 0.9,
-            interactive: false
-          }).addTo(targetMap);
-        });
-
-        // 簡潔小琉球地標浮水印標籤（不遮擋行程標記）
-        var islandWatermarks = [
-          { lat: 22.3388, lng: 120.3726, text: "小琉球（琉球嶼）" },
-          { lat: 22.3554, lng: 120.3852, text: "白沙尾港" },
-          { lat: 22.3346, lng: 120.3848, text: "大福漁港" },
-          { lat: 22.3338, lng: 120.3544, text: "蛤板灣" }
-        ];
-
-        islandWatermarks.forEach(function (wm) {
-          L.marker([wm.lat, wm.lng], {
-            interactive: false,
-            zIndexOffset: -500,
-            icon: L.divIcon({
-              className: "custom-pin-wrapper",
-              iconSize: [96, 18],
-              iconAnchor: [48, 9],
-              html:
-                '<div style="text-align:center;font-size:10px;font-weight:800;color:#0f766e;text-shadow:0 1px 2px #ffffff,0 -1px 2px #ffffff,1px 0 2px #ffffff,-1px 0 2px #ffffff;pointer-events:none;white-space:nowrap;opacity:0.85;">' +
-                  wm.text +
-                '</div>'
-            })
-          }).addTo(targetMap);
-        });
-      }
-
-      function getActiveStops() {
-        var dayKey = isRoutePage(activePage) ? activePage : "day1";
-        return appData.routes[dayKey] || [];
-      }
-
-      function getActiveStopIndex() {
-        var dayKey = isRoutePage(activePage) ? activePage : "day1";
-        var stops = getActiveStops();
-        if (stops.length === 0) return 0;
-        var idx = appData.currentIndexByDay[dayKey] || 0;
-        if (idx >= stops.length) idx = stops.length - 1;
-        if (idx < 0) idx = 0;
-        appData.currentIndexByDay[dayKey] = idx;
-        return idx;
-      }
-
-      function getCuteTurtleSvg() {
-        return (
-          '<svg width="36" height="36" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="cute-turtle-swim" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35));">' +
-            '<ellipse cx="14" cy="24" rx="10" ry="5" transform="rotate(-28 14 24)" fill="#22c55e" stroke="#ffffff" stroke-width="2.5"/>' +
-            '<ellipse cx="50" cy="24" rx="10" ry="5" transform="rotate(28 50 24)" fill="#22c55e" stroke="#ffffff" stroke-width="2.5"/>' +
-            '<ellipse cx="19" cy="48" rx="7" ry="4" transform="rotate(35 19 48)" fill="#16a34a" stroke="#ffffff" stroke-width="2"/>' +
-            '<ellipse cx="45" cy="48" rx="7" ry="4" transform="rotate(-35 45 48)" fill="#16a34a" stroke="#ffffff" stroke-width="2"/>' +
-            '<path d="M32 51 L29 58 L35 58 Z" fill="#16a34a"/>' +
-            '<circle cx="32" cy="12" r="8.5" fill="#4ade80" stroke="#ffffff" stroke-width="2.5"/>' +
-            '<circle cx="28.8" cy="10.5" r="1.7" fill="#0f172a"/>' +
-            '<circle cx="35.2" cy="10.5" r="1.7" fill="#0f172a"/>' +
-            '<circle cx="29.3" cy="10" r="0.6" fill="#ffffff"/>' +
-            '<circle cx="35.7" cy="10" r="0.6" fill="#ffffff"/>' +
-            '<circle cx="26.8" cy="13" r="1.4" fill="#fb7185" opacity="0.8"/>' +
-            '<circle cx="37.2" cy="13" r="1.4" fill="#fb7185" opacity="0.8"/>' +
-            '<ellipse cx="32" cy="35" rx="16.5" ry="18.5" fill="#15803d" stroke="#ffffff" stroke-width="3"/>' +
-            '<polygon points="32,23 39,28 39,37 32,42 25,37 25,28" fill="#4ade80" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="32" y1="17" x2="32" y2="23" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="39" y1="28" x2="47" y2="26" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="25" y1="28" x2="17" y2="26" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="39" y1="37" x2="46" y2="41" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="25" y1="37" x2="18" y2="41" stroke="#166534" stroke-width="1.8"/>' +
-            '<line x1="32" y1="42" x2="32" y2="52" stroke="#166534" stroke-width="1.8"/>' +
-          '</svg>'
-        );
-      }
-
-      function escapeHtml(str) {
-        return String(str || "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
-      }
-
-      function buildPinIcon(stop, idx, curIdx) {
-        var displayNum = idx + 1;
-        var isPickingThis = isEditMode && pickingStopIndex === idx;
-        var isCurrent = idx === curIdx;
-        var isNext = idx === curIdx + 1;
-        var isWater = detectWaterActivity(stop);
-
-        if (isPickingThis) {
-          return L.divIcon({
-            className: "custom-pin-wrapper",
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-            html:
-              '<div style="width:28px;height:28px;border-radius:9999px;background:#f59e0b;color:#ffffff;border:3px solid #ffffff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(245,158,11,0.5);">' +
-                displayNum +
-              '</div>'
-          });
-        }
-
-        if (isCurrent) {
-          var cleanPillName = String(stop.name || "").replace(/^●水上活動：/, "");
-          var pillPrefix = isWater ? "🌊 " : "🐢 ";
-          return L.divIcon({
-            className: "custom-pin-wrapper",
-            iconSize: [225, 42],
-            iconAnchor: [21, 21],
-            html:
-              '<div style="display:inline-flex;align-items:center;gap:5px;pointer-events:auto;">' +
-                '<div class="turtle-badge-pulse" style="width:42px;height:42px;border-radius:9999px;background:rgba(255,255,255,0.95);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
-                  getCuteTurtleSvg() +
-                '</div>' +
-                '<span style="background:#1e3a8a;color:#ffffff;font-size:11px;font-weight:800;padding:3px 9px;border-radius:9999px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.45);">' +
-                  pillPrefix + escapeHtml(cleanPillName) +
-                '</span>' +
-              '</div>'
-          });
-        }
-
-        if (isNext) {
-          return L.divIcon({
-            className: "custom-pin-wrapper",
-            iconSize: [24, 24],
-            iconAnchor: [12, 12],
-            html:
-              '<div style="width:24px;height:24px;border-radius:9999px;background:#f97316;color:#ffffff;border:2px solid #ffffff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,0.3);">' +
-                displayNum +
-              '</div>'
-          });
-        }
-
-        if (isWater) {
-          return L.divIcon({
-            className: "custom-pin-wrapper",
-            iconSize: [20, 20],
-            iconAnchor: [10, 10],
-            html:
-              '<div style="width:20px;height:20px;border-radius:9999px;background:#0891b2;color:#ffffff;border:2px solid #ffffff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.3);">' +
-                displayNum +
-              '</div>'
-          });
-        }
-
-        return L.divIcon({
-          className: "custom-pin-wrapper",
-          iconSize: [18, 18],
-          iconAnchor: [9, 9],
-          html:
-            '<div style="width:18px;height:18px;border-radius:9999px;background:#ffffff;color:#334155;border:1.5px solid #475569;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.25);">' +
-              displayNum +
-            '</div>'
-        });
-      }
-
-      function fitIslandView() {
-        if (!map) return;
-        try {
-          map.invalidateSize();
-          map.fitBounds(ISLAND_BOUNDS, { padding: [12, 12], maxZoom: 14 });
-        } catch (e) {}
-      }
-
-      function renderMapMarkers() {
-        if (!map || typeof L === "undefined") return;
-        try {
-          mapMarkers.forEach(function (m) {
-            map.removeLayer(m);
-          });
-          mapMarkers = [];
-
-          var stops = getActiveStops();
-          var curIdx = getActiveStopIndex();
-
-          var allLatLngs = stops.map(function (s) {
-            return [s.lat, s.lng];
-          });
-          fullRouteLine.setLatLngs(allLatLngs);
-
-          if (curIdx + 1 < stops.length) {
-            var cur = stops[curIdx];
-            var nxt = stops[curIdx + 1];
-            activeSegmentLine.setLatLngs([
-              [cur.lat, cur.lng],
-              [nxt.lat, nxt.lng]
-            ]);
-          } else {
-            activeSegmentLine.setLatLngs([]);
-          }
-
-          stops.forEach(function (stop, idx) {
-            var marker = L.marker([stop.lat, stop.lng], {
-              icon: buildPinIcon(stop, idx, curIdx),
-              zIndexOffset: idx === curIdx ? 1000 : idx === curIdx + 1 ? 500 : 100
-            }).addTo(map);
-
-            marker.on("click", function () {
-              if (!isEditMode) {
-                setCurrentStop(idx, true);
-              }
-            });
-
-            mapMarkers.push(marker);
-          });
-        } catch (e) {
-          console.error("地圖標記渲染異常:", e);
-        }
-      }
-
-      function initMapWithRetry(retriesLeft) {
-        if (typeof L === "undefined") {
-          if (retriesLeft > 0) {
-            setTimeout(function () {
-              initMapWithRetry(retriesLeft - 1);
-            }, 300);
-          }
-          return;
-        }
-
-        try {
-          map = L.map("map", {
-            zoomControl: false,
-            attributionControl: true
-          });
-
-          L.control.zoom({ position: "bottomright" }).addTo(map);
-
-          // 繪製內建高解析小琉球島嶼海岸線與主要道路網（保證全島輪廓與沙灘清晰可見）
-          addXiaoliuqiuBaseVectorLayer(map);
-
-          // 使用無需 API Key 的 Esri World Street Map 街道圖底圖，並設定自動備援切換（OSM DE / Wikimedia）
-          var tileSources = [
-            {
-              url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-              options: {
-                maxZoom: 19,
-                attribution: "Tiles &copy; Esri &mdash; Source: Esri, HERE, Garmin, OSM"
-              }
-            },
-            {
-              url: "https://tile.openstreetmap.de/{z}/{x}/{y}.png",
-              options: {
-                maxZoom: 18,
-                attribution: "&copy; OpenStreetMap contributors"
-              }
-            },
-            {
-              url: "https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png",
-              options: {
-                maxZoom: 18,
-                attribution: "Wikimedia Maps | &copy; OpenStreetMap"
-              }
-            }
-          ];
-
-          var currentSourceIdx = 0;
-          var tileErrorCount = 0;
-          var activeTileLayer = null;
-
-          function loadTileSource(sourceIdx) {
-            if (sourceIdx >= tileSources.length) return;
-            currentSourceIdx = sourceIdx;
-            tileErrorCount = 0;
-            if (activeTileLayer) {
-              try {
-                map.removeLayer(activeTileLayer);
-              } catch (err) {}
-            }
-            var src = tileSources[sourceIdx];
-            activeTileLayer = L.tileLayer(src.url, src.options);
-            activeTileLayer.on("tileerror", function () {
-              tileErrorCount += 1;
-              if (tileErrorCount >= 4 && currentSourceIdx + 1 < tileSources.length) {
-                loadTileSource(currentSourceIdx + 1);
-              }
-            });
-            activeTileLayer.addTo(map);
-          }
-
-          loadTileSource(0);
-
-          fullRouteLine = L.polyline([], {
-            color: "#64748b",
-            weight: 3,
-            opacity: 0.65,
-            dashArray: "6, 6"
-          }).addTo(map);
-
-          activeSegmentLine = L.polyline([], {
-            color: "#2563eb",
-            weight: 5,
-            opacity: 0.95
-          }).addTo(map);
-
-          map.on("click", function (e) {
-            if (isEditMode && pickingStopIndex !== null && isRoutePage(activePage)) {
-              var stops = getActiveStops();
-              if (stops[pickingStopIndex]) {
-                stops[pickingStopIndex].lat = Number(e.latlng.lat.toFixed(5));
-                stops[pickingStopIndex].lng = Number(e.latlng.lng.toFixed(5));
-                var updatedName = stops[pickingStopIndex].name;
-                cancelMapPicking();
-                persistAndSync(true);
-                renderStopList();
-                renderMapMarkers();
-                showToast("📍 已更新「" + updatedName + "」位置");
-              }
-            }
-          });
-
-          fitIslandView();
-          renderMapMarkers();
-        } catch (e) {
-          console.error("地圖初始化異常:", e);
-        }
-      }
-
-      // =====================================================================
-      // 5. 渲染 day1 / day2 / day3 路線清單（純 DOM 建構 + addEventListener）
-      // =====================================================================
-      function getGoogleMapsSearchUrl(stop) {
-        var cleanName = String(stop.name || "")
-          .replace(/^●水上活動：/, "")
-          .replace(/^\d+\.\s*/, "")
-          .replace(/^\[[^\]]+\]\s*/, "");
-        if (cleanName.indexOf("玻璃船") !== -1) {
-          cleanName = "白沙觀光碼頭";
-        } else if (cleanName.indexOf("東港午餐") !== -1) {
-          cleanName = "東港華僑市場";
-        }
-        var prefix = cleanName.indexOf("東港") !== -1 ? "" : "小琉球 ";
-        var q = encodeURIComponent(prefix + cleanName);
-        return "https://www.google.com/maps/search/?api=1&query=" + q;
-      }
-
-      function renderStopList() {
-        stopListEl.innerHTML = "";
-        var stops = getActiveStops();
-        var curIdx = getActiveStopIndex();
-        var activeRowEl = null;
-
-        if (stops.length === 0) {
-          var emptyDiv = document.createElement("div");
-          emptyDiv.className = "p-4 text-center text-xs text-slate-400";
-          emptyDiv.textContent = "尚無站點，請點下方「＋ 新增站點」";
-          stopListEl.appendChild(emptyDiv);
-          return;
-        }
-
-        stops.forEach(function (stop, idx) {
-          var displayNum = idx + 1;
-          var isWater = detectWaterActivity(stop);
-          var groupMeta = getGroupMeta(stop);
-
-          if (!isEditMode) {
-            // 若該站點帶有階段標題（如「第一階段：全員共同行動」或「第二階段：13:50 兩批分流時間表」），插入階段分隔橫幅
-            if (stop.phase) {
-              var phaseBanner = document.createElement("div");
-              phaseBanner.className = "px-2.5 py-1 rounded-lg bg-slate-800 text-white text-[10px] font-extrabold tracking-wide flex items-center gap-1.5 shadow-2xs";
-              phaseBanner.textContent = "⏱️ " + stop.phase;
-              stopListEl.appendChild(phaseBanner);
-            }
-
-            var isCurrent = idx === curIdx;
-            var isNext = idx === curIdx + 1;
-            var isPast = idx < curIdx;
-
-            var row = document.createElement("div");
-            row.setAttribute("role", "button");
-            row.setAttribute("tabindex", "0");
-
-            if (isCurrent) {
-              row.className = "rounded-xl bg-blue-50 border border-blue-500 px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer shadow-2xs select-none touch-manipulation";
-              activeRowEl = row;
-            } else if (isNext) {
-              row.className = "rounded-xl bg-amber-50/95 border border-amber-300 px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer select-none touch-manipulation";
-            } else if (isPast) {
-              row.className = "rounded-xl bg-slate-50/80 border border-transparent px-2.5 py-1.5 flex items-center justify-between gap-2 opacity-60 hover:opacity-95 cursor-pointer select-none touch-manipulation";
-            } else if (groupMeta.key !== "all") {
-              row.className = "rounded-xl border px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer select-none touch-manipulation " + groupMeta.cardBg;
-            } else if (isWater) {
-              row.className = "rounded-xl bg-cyan-50/85 hover:bg-cyan-100/70 border border-cyan-200 px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer select-none touch-manipulation";
-            } else {
-              row.className = "rounded-xl bg-white hover:bg-slate-50 border border-slate-100 px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer select-none touch-manipulation";
-            }
-
-            var leftWrap = document.createElement("div");
-            leftWrap.className = "flex items-start gap-1.5 min-w-0 flex-1";
-
-            var prefixSpan = document.createElement("span");
-            if (isCurrent) {
-              prefixSpan.className = "shrink-0 text-sm leading-none mt-0.5";
-              prefixSpan.textContent = "🐢";
-            } else if (isNext) {
-              prefixSpan.className = "shrink-0 text-xs font-extrabold text-amber-600 leading-none mt-0.5";
-              prefixSpan.textContent = "➡️";
-            } else if (isPast) {
-              prefixSpan.className = "shrink-0 text-[11px] font-bold text-slate-400 w-4 text-center mt-0.5";
-              prefixSpan.textContent = "✓";
-            } else if (groupMeta.key === "groupA") {
-              prefixSpan.className = "shrink-0 text-xs leading-none w-4 text-center mt-0.5";
-              prefixSpan.textContent = "🚤";
-            } else if (groupMeta.key === "groupB") {
-              prefixSpan.className = "shrink-0 text-xs leading-none w-4 text-center mt-0.5";
-              prefixSpan.textContent = "🛶";
-            } else if (isWater) {
-              prefixSpan.className = "shrink-0 text-xs leading-none w-4 text-center mt-0.5";
-              prefixSpan.textContent = "🌊";
-            } else {
-              prefixSpan.className = "shrink-0 text-[11px] font-bold text-slate-400 w-4 text-right mt-0.5";
-              prefixSpan.textContent = displayNum + ".";
-            }
-
-            var textBox = document.createElement("div");
-            textBox.className = "min-w-0 flex-1";
-
-            var titleLine = document.createElement("div");
-            titleLine.className = "flex items-center gap-1 min-w-0 flex-wrap";
-
-            if (stop.time) {
-              var timePill = document.createElement("span");
-              timePill.className = "shrink-0 px-1.5 py-0.5 rounded text-[10px] font-extrabold leading-none " +
-                (isCurrent
-                  ? "bg-blue-600 text-white"
-                  : groupMeta.key !== "all"
-                    ? groupMeta.pillBg
-                    : isWater
-                      ? "bg-cyan-700 text-white"
-                      : "bg-slate-100 text-slate-700");
-              timePill.textContent = stop.time;
-              titleLine.appendChild(timePill);
-            }
-
-            var nameSpan = document.createElement("span");
-            nameSpan.className = "text-xs font-bold truncate " +
-              (isCurrent
-                ? "text-blue-950"
-                : isNext
-                  ? "text-amber-950"
-                  : isPast
-                    ? "line-through text-slate-500"
-                    : isWater
-                      ? "text-slate-900"
-                      : "text-slate-800");
-            nameSpan.textContent = stop.name;
-            titleLine.appendChild(nameSpan);
-
-            textBox.appendChild(titleLine);
-
-            if (stop.note) {
-              var noteSpan = document.createElement("span");
-              noteSpan.className = "block text-[10px] font-medium leading-snug mt-0.5 " +
-                (isCurrent ? "text-blue-900 font-semibold" : groupMeta.noteColor);
-              noteSpan.textContent = stop.note;
-              textBox.appendChild(noteSpan);
-            }
-
-            leftWrap.appendChild(prefixSpan);
-            leftWrap.appendChild(textBox);
-            row.appendChild(leftWrap);
-
-            if (isCurrent) {
-              var navLink = document.createElement("a");
-              navLink.href = getGoogleMapsSearchUrl(stop);
-              navLink.target = "_blank";
-              navLink.rel = "noopener noreferrer";
-              navLink.textContent = "導航";
-              navLink.className = "shrink-0 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-extrabold leading-tight shadow-2xs self-center";
-              navLink.addEventListener("click", function (e) {
-                e.stopPropagation();
-              });
-              row.appendChild(navLink);
-            }
-
-            row.addEventListener("click", function () {
-              setCurrentStop(idx, true);
-            });
-
-            stopListEl.appendChild(row);
-          } else {
-            // 編輯模式卡片
-            var isPicking = pickingStopIndex === idx;
-            var editCard = document.createElement("div");
-            editCard.className = isPicking
-              ? "rounded-xl bg-amber-50 border-2 border-amber-500 p-2 space-y-1.5"
-              : "rounded-xl bg-white border border-slate-200 p-2 space-y-1.5";
-
-            var topLine = document.createElement("div");
-            topLine.className = "flex items-center gap-1";
-
-            var numSpan = document.createElement("span");
-            numSpan.className = "shrink-0 w-4 text-[11px] font-extrabold text-slate-400 text-right";
-            numSpan.textContent = displayNum + ".";
-
-            var nameInput = document.createElement("input");
-            nameInput.type = "text";
-            nameInput.value = stop.name || "";
-            nameInput.placeholder = "站點或活動名稱";
-            nameInput.className = "flex-1 min-w-0 px-2 py-1 rounded-md bg-slate-50 border border-slate-300 text-xs font-bold text-slate-900 focus:bg-white focus:border-teal-600 focus:outline-none";
-            nameInput.addEventListener("input", function () {
-              stops[idx].name = nameInput.value;
-              stops[idx].isWaterActivity = detectWaterActivity(stops[idx]);
-              persistAndSync(false);
-              renderMapMarkers();
-            });
-
-            var pickBtn = document.createElement("button");
-            pickBtn.type = "button";
-            pickBtn.textContent = "📍";
-            pickBtn.title = "點擊地圖設定此站位置";
-            pickBtn.className = "shrink-0 px-1.5 py-1 rounded-md text-[10px] font-extrabold cursor-pointer touch-manipulation " +
-              (isPicking ? "bg-amber-500 text-white" : "bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200");
-            pickBtn.addEventListener("click", function () {
-              if (pickingStopIndex === idx) {
-                cancelMapPicking();
-              } else {
-                pickingStopIndex = idx;
-                mapWrapEl.classList.add("map-pick-cursor");
-                mapPickBannerText.textContent = "📍 請點擊地圖設定「" + (stops[idx].name || "此站") + "」";
-                mapPickBanner.classList.remove("hidden");
-              }
-              renderStopList();
-              renderMapMarkers();
-            });
-
-            var upBtn = document.createElement("button");
-            upBtn.type = "button";
-            upBtn.textContent = "↑";
-            upBtn.title = "上移";
-            upBtn.className = "shrink-0 w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 cursor-pointer touch-manipulation";
-            upBtn.addEventListener("click", function () {
-              if (idx > 0) {
-                var tmp = stops[idx - 1];
-                stops[idx - 1] = stops[idx];
-                stops[idx] = tmp;
-                cancelMapPicking();
-                persistAndSync(true);
-                renderStopList();
-                renderMapMarkers();
-              }
-            });
-
-            var downBtn = document.createElement("button");
-            downBtn.type = "button";
-            downBtn.textContent = "↓";
-            downBtn.title = "下移";
-            downBtn.className = "shrink-0 w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 text-[11px] font-bold text-slate-700 cursor-pointer touch-manipulation";
-            downBtn.addEventListener("click", function () {
-              if (idx < stops.length - 1) {
-                var tmp = stops[idx + 1];
-                stops[idx + 1] = stops[idx];
-                stops[idx] = tmp;
-                cancelMapPicking();
-                persistAndSync(true);
-                renderStopList();
-                renderMapMarkers();
-              }
-            });
-
-            var delBtn = document.createElement("button");
-            delBtn.type = "button";
-            delBtn.textContent = "🗑️";
-            delBtn.title = "刪除";
-            delBtn.className = "shrink-0 w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-[11px] font-bold text-rose-600 cursor-pointer touch-manipulation";
-            delBtn.addEventListener("click", function () {
-              if (stops.length <= 1) {
-                showToast("至少需保留 1 個站點");
-                return;
-              }
-              stops.splice(idx, 1);
-              cancelMapPicking();
-              getActiveStopIndex();
-              persistAndSync(true);
-              renderStopList();
-              renderMapMarkers();
-            });
-
-            topLine.appendChild(numSpan);
-            topLine.appendChild(nameInput);
-            topLine.appendChild(pickBtn);
-            topLine.appendChild(upBtn);
-            topLine.appendChild(downBtn);
-            topLine.appendChild(delBtn);
-
-            var subLine = document.createElement("div");
-            subLine.className = "pl-5 flex items-center gap-1.5";
-
-            var timeInput = document.createElement("input");
-            timeInput.type = "text";
-            timeInput.value = stop.time || "";
-            timeInput.placeholder = "時段（如 12:00-12:50）";
-            timeInput.className = "w-28 shrink-0 px-2 py-0.5 rounded-md bg-blue-50/70 border border-blue-200 text-[11px] font-bold text-blue-900 focus:bg-white focus:border-teal-600 focus:outline-none";
-            timeInput.addEventListener("input", function () {
-              stops[idx].time = timeInput.value;
-              persistAndSync(false);
-            });
-
-            var noteInput = document.createElement("input");
-            noteInput.type = "text";
-            noteInput.value = stop.note || "";
-            noteInput.placeholder = "報到處或備註（選填）";
-            noteInput.className = "flex-1 min-w-0 px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600 focus:bg-white focus:border-teal-600 focus:outline-none";
-            noteInput.addEventListener("input", function () {
-              stops[idx].note = noteInput.value;
-              persistAndSync(false);
-            });
-
-            subLine.appendChild(timeInput);
-            subLine.appendChild(noteInput);
-
-            editCard.appendChild(topLine);
-            editCard.appendChild(subLine);
-            stopListEl.appendChild(editCard);
-          }
-        });
-
-        if (!isEditMode && activeRowEl) {
-          try {
-            activeRowEl.scrollIntoView({ block: "nearest", behavior: "smooth" });
-          } catch (e) {}
-        }
-      }
-
-      document.getElementById("addStopBtn").addEventListener("click", function () {
-        if (!isRoutePage(activePage)) return;
-        var stops = getActiveStops();
-        var center = map ? map.getCenter() : { lat: 22.3420, lng: 120.3720 };
-        stops.push({
-          name: "新站點 " + (stops.length + 1),
-          time: "",
-          phase: "",
-          group: "all",
-          note: "",
-          isWaterActivity: false,
-          lat: Number(center.lat.toFixed(5)),
-          lng: Number(center.lng.toFixed(5))
-        });
-        persistAndSync(true);
-        renderStopList();
-        renderMapMarkers();
-        stopListEl.scrollTop = stopListEl.scrollHeight;
-        showToast("已新增站點，可點 📍 在地圖上調整位置");
-      });
-
-      document.getElementById("resetDayBtn").addEventListener("click", function () {
-        if (!isRoutePage(activePage)) return;
-        var defaults = createDefaultData();
-        if (activePage === "day3") {
-          var planKey = appData.day3Plan === "B" ? "B" : "A";
-          appData.day3Plans[planKey] = defaults.day3Plans[planKey];
-          appData.routes.day3 = defaults.day3Plans[planKey];
-        } else {
-          appData.routes[activePage] = defaults.routes[activePage];
-        }
-        appData.currentIndexByDay[activePage] = 0;
-        cancelMapPicking();
-        persistAndSync(true);
-        renderStopList();
-        renderMapMarkers();
-        showToast("已還原 " + PAGE_LABELS[activePage] + " 預設路線");
-      });
-
-      document.getElementById("cancelPickBtn").addEventListener("click", function () {
-        cancelMapPicking();
-        renderStopList();
-        renderMapMarkers();
-      });
-
-      function setCurrentStop(newIdx, shouldBroadcast) {
-        if (!isRoutePage(activePage)) return;
-        var stops = getActiveStops();
-        var clamped = Math.max(0, Math.min(stops.length - 1, newIdx));
-        appData.currentIndexByDay[activePage] = clamped;
-
-        renderStopList();
-        renderMapMarkers();
-
-        // 若點選 Day 3 方案A 最後一站（東港華僑市場），自動微調地圖視角包含東港位置；其餘維持小琉球全島視角
-        var curStop = stops[clamped];
-        if (map && curStop && curStop.lat > 22.40) {
-          try {
-            map.invalidateSize();
-            map.fitBounds([
-              [22.3220, 120.3520],
-              [22.4720, 120.4520]
-            ], { padding: [18, 18] });
-          } catch (e) {}
-        } else {
-          fitIslandView();
-        }
-
-        if (shouldBroadcast) {
-          persistAndSync(true);
-        }
-      }
-
-      nextBtn.addEventListener("click", function () {
-        if (!isRoutePage(activePage)) return;
-        var stops = getActiveStops();
-        var curIdx = getActiveStopIndex();
-        var nextIdx = curIdx + 1 < stops.length ? curIdx + 1 : 0;
-        setCurrentStop(nextIdx, true);
-      });
-
-      fitIslandBtn.addEventListener("click", function () {
-        fitIslandView();
-      });
-
-      window.addEventListener("resize", function () {
-        if (isRoutePage(activePage)) {
-          fitIslandView();
-        }
-      });
-
-      // =====================================================================
-      // 6. 背景非同步 Firebase Firestore 即時同步（不阻塞任何 UI 操作）
-      // =====================================================================
-      function initFirebaseSync() {
-        var syncDot = document.getElementById("syncDot");
-
-        function setSyncStatus(status) {
-          if (!syncDot) return;
-          if (status === "online") {
-            syncDot.className = "w-2 h-2 rounded-full bg-emerald-500 shrink-0 transition-colors";
-            syncDot.title = "已連線雲端即時同步（15人同步中）";
-          } else {
-            syncDot.className = "w-2 h-2 rounded-full bg-amber-400 shrink-0 transition-colors";
-            syncDot.title = "本機模式（背景重試同步中）";
-          }
-        }
-
-        if (typeof firebase === "undefined") {
-          setSyncStatus("offline");
-          return;
-        }
-
-        try {
-          var firebaseConfig = {
-            apiKey: "AIzaSyCNHvVob7UiFt6G05uy3R5eljqcUQNVPGY",
-            authDomain: "project-4310350545072047895.firebaseapp.com",
-            projectId: "project-4310350545072047895",
-            storageBucket: "project-4310350545072047895.firebasestorage.app",
-            messagingSenderId: "872114463769",
-            appId: "1:872114463769:web:07e314581737fb9ba2f688"
-          };
-
-          if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-          }
-
-          var auth = firebase.auth();
-          var db = firebase.firestore();
-          var tripDocRef = db.collection("trips").doc("xiaoliuqiu-15-group-v2");
-
-          auth.signInAnonymously()
-            .then(function () {
-              pushCloudFn = function (fullState) {
-                try {
-                  tripDocRef.set(
-                    {
-                      notes: fullState.notes,
-                      departure: fullState.departure,
-                      day3Plan: fullState.day3Plan,
-                      day3Plans: fullState.day3Plans,
-                      routes: fullState.routes,
-                      currentIndexByDay: fullState.currentIndexByDay,
-                      updatedAt: Date.now()
-                    },
-                    { merge: true }
-                  ).catch(function () {});
-                } catch (err) {}
-              };
-
-              tripDocRef.onSnapshot(
-                function (snapshot) {
-                  setSyncStatus("online");
-                  if (!snapshot.exists) {
-                    pushCloudFn(appData);
-                    return;
-                  }
-                  var remoteData = snapshot.data();
-                  if (!remoteData || typeof remoteData !== "object") return;
-
-                  if (
-                    isEditMode &&
-                    document.activeElement &&
-                    (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")
-                  ) {
-                    return;
-                  }
-
-                  if (Array.isArray(remoteData.notes)) appData.notes = remoteData.notes;
-                  if (Array.isArray(remoteData.departure)) appData.departure = remoteData.departure;
-                  if (remoteData.day3Plan === "A" || remoteData.day3Plan === "B") {
-                    appData.day3Plan = remoteData.day3Plan;
-                  }
-                  if (remoteData.day3Plans && typeof remoteData.day3Plans === "object") {
-                    if (Array.isArray(remoteData.day3Plans.A) && remoteData.day3Plans.A.length > 0) {
-                      appData.day3Plans.A = remoteData.day3Plans.A;
-                    }
-                    if (Array.isArray(remoteData.day3Plans.B) && remoteData.day3Plans.B.length > 0) {
-                      appData.day3Plans.B = remoteData.day3Plans.B;
-                    }
-                  }
-                  if (remoteData.routes && typeof remoteData.routes === "object") {
-                    ["day1", "day2", "day3"].forEach(function (d) {
-                      if (Array.isArray(remoteData.routes[d]) && remoteData.routes[d].length > 0) {
-                        appData.routes[d] = remoteData.routes[d];
-                      }
-                    });
-                  }
-                  if (remoteData.currentIndexByDay && typeof remoteData.currentIndexByDay === "object") {
-                    ["day1", "day2", "day3"].forEach(function (d) {
-                      var idx = parseInt(remoteData.currentIndexByDay[d], 10);
-                      if (!isNaN(idx) && idx >= 0) {
-                        appData.currentIndexByDay[d] = Math.min(idx, appData.routes[d].length - 1);
-                      }
-                    });
-                  }
-
-                  try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
-                  } catch (e) {}
-
-                  renderActivePage();
-                },
-                function () {
-                  setSyncStatus("offline");
-                }
-              );
-            })
-            .catch(function () {
-              setSyncStatus("offline");
-            });
+          ignoreNextSnapshot = true;
+          await setDoc(tripDocRef, {
+            payload: JSON.stringify(latestState),
+            updatedAt: Date.now()
+          }, { merge: true });
         } catch (err) {
-          setSyncStatus("offline");
+          console.warn("Firebase write skipped:", err);
         }
-      }
+      };
 
-      // 立即執行初次頁面渲染、地圖初始化與背景雲端連線
-      switchPage("day1");
-      initMapWithRetry(10);
-      initFirebaseSync();
-    })();
+      onSnapshot(tripDocRef, (snap) => {
+        const dot = document.getElementById("syncDot");
+        if (dot) {
+          dot.classList.add("online");
+          dot.title = "雲端即時同步中";
+        }
+        if (ignoreNextSnapshot) {
+          ignoreNextSnapshot = false;
+          return;
+        }
+        if (snap.exists() && snap.data().payload && !isEditing) {
+          try {
+            const remoteState = JSON.parse(snap.data().payload);
+            const currentViewKeep = state.activeView;
+            state = Object.assign({}, state, remoteState, { activeView: currentViewKeep });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            renderAll();
+          } catch (e) {}
+        }
+      });
+    } catch (e) {
+      console.warn("Firebase init fallback:", e);
+    }
   </script>
 </body>
 </html>
