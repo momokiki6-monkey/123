@@ -227,7 +227,7 @@
     .modal-cancel { background: #e2e8f0; color: #334155; }
     .modal-confirm { background: #0284c7; color: #fff; }
     .share-url-box {
-      width: 100%; padding: 9px 10px; font-size: 13px; color: #0f172a;
+      width: 100%; padding: 9px 10px; font-size: 16px; color: #0f172a;
       background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 9px;
       margin-bottom: 10px; text-align: left;
     }
@@ -1356,35 +1356,54 @@ ${url}` };
         } catch (e) {}
       }
       if (!copied) {
-        try {
-          const ta = document.createElement("textarea");
-          ta.value = payload.fullText;
-          ta.style.position = "fixed";
-          ta.style.opacity = "0";
-          document.body.appendChild(ta);
-          ta.focus();
-          ta.select();
-          copied = document.execCommand("copy");
-          document.body.removeChild(ta);
-        } catch (e) {}
-      }
-      if (copied) {
-        showToast("✅ 已複製分享連結與行程文字！");
-      } else {
         const inp = document.getElementById("shareUrlInput");
-        if (inp) { inp.focus(); inp.select(); }
+        if (inp) { inp.select(); }
         showToast("請手動複製下方網址");
       }
-      document.getElementById("shareModal").classList.remove("open");
+      closeShareModal();
     });
 
-    document.getElementById("shareCloseBtn").addEventListener("click", () => {
-      document.getElementById("shareModal").classList.remove("open");
-    });
+    function resetViewportAndLayout() {
+      try {
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+          document.activeElement.blur();
+        }
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      } catch (e) {}
+      if (map) {
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 100);
+      }
+    }
+
+    function closeShareModal() {
+      const modal = document.getElementById("shareModal");
+      if (modal) modal.classList.remove("open");
+      resetViewportAndLayout();
+    }
+
+    document.getElementById("shareCloseBtn").addEventListener("click", closeShareModal);
 
     document.getElementById("shareModal").addEventListener("click", (e) => {
       if (e.target.id === "shareModal") {
-        document.getElementById("shareModal").classList.remove("open");
+        closeShareModal();
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        resetViewportAndLayout();
+      }
+    });
+
+    window.addEventListener("pageshow", resetViewportAndLayout);
+    window.addEventListener("resize", () => {
+      if (map) {
+        clearTimeout(window._resizeMapTimer);
+        window._resizeMapTimer = setTimeout(() => map.invalidateSize(), 120);
       }
     });
 
