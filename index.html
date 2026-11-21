@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>趣小琉球三天兩夜15人｜即時路線同步地圖</title>
+  <title>趣小琉球Hi三天兩夜｜即時路線同步地圖</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
   <style>
     :root {
@@ -49,11 +49,12 @@
     }
     .sync-dot.online { background: #4ade80; }
     .sub-view-name { font-size: 11px; color: #e0f2fe; font-weight: 600; }
-    .topbar-right { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .topbar-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
     .btn-sm {
-      height: 30px; padding: 0 8px; border-radius: 7px; border: none;
-      font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;
+      height: 30px; padding: 0 7px; border-radius: 7px; border: none;
+      font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px;
     }
+    .btn-share { background: #10b981; color: #fff; }
     .btn-edit { background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.3); }
     .btn-edit.active { background: #16a34a; border-color: #16a34a; }
     .btn-next { background: #f97316; color: #fff; }
@@ -201,6 +202,20 @@
     }
     .modal-cancel { background: #e2e8f0; color: #334155; }
     .modal-confirm { background: #0284c7; color: #fff; }
+    .share-url-box {
+      width: 100%; padding: 9px 10px; font-size: 13px; color: #0f172a;
+      background: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 9px;
+      margin-bottom: 10px; text-align: left;
+    }
+    .share-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    .share-action-btn {
+      width: 100%; padding: 10px; border-radius: 10px; border: none;
+      font-size: 14.5px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      text-decoration: none;
+    }
+    .share-line { background: #06c755; color: #fff; }
+    .share-copy { background: #0284c7; color: #fff; }
     .num-pin {
       width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 2.5px solid #0284c7;
       color: #0f172a; font-weight: 800; font-size: 12px; display: flex; align-items: center; justify-content: center;
@@ -233,12 +248,13 @@
         <div class="title-wrap">
           <div class="app-title">
             <span class="sync-dot" id="syncDot" title="本機模式"></span>
-            <span>趣小琉球三天兩夜15人</span>
+            <span>趣小琉球Hi三天兩夜</span>
           </div>
           <div class="sub-view-name" id="currentViewLabel">day1時間排程</div>
         </div>
       </div>
       <div class="topbar-right">
+        <button class="btn-sm btn-share" id="shareBtn" title="分享行程給朋友">📤 分享</button>
         <button class="btn-sm btn-edit" id="editToggleBtn">✏️ 編輯</button>
         <button class="btn-sm btn-next" id="nextStopBtn">下一站 ➔</button>
       </div>
@@ -269,7 +285,7 @@
   <div class="modal-backdrop" id="pinModal">
     <div class="modal-box">
       <div class="modal-title">🔒 輸入管理密碼</div>
-      <div class="modal-desc">請輸入編輯權限密碼以修改行程</div>
+      <div class="modal-desc" id="pinModalDesc">請輸入管理者權限密碼（3701）</div>
       <input type="password" inputmode="numeric" maxlength="8" class="pin-input" id="pinInput" autocomplete="off" />
       <div class="pin-err" id="pinError"></div>
       <div class="modal-btns">
@@ -279,10 +295,25 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="shareModal">
+    <div class="modal-box">
+      <div class="modal-title">📤 分享行程給朋友</div>
+      <div class="modal-desc">傳送即時路線地圖連結給同行夥伴，可隨時查看目前所在站點與排程</div>
+      <input type="text" readonly class="share-url-box" id="shareUrlInput" />
+      <div class="share-actions">
+        <button class="share-action-btn share-copy" id="copyShareBtn">📋 複製連結與行程文字</button>
+        <a class="share-action-btn share-line" id="lineShareLink" target="_blank" rel="noopener">💬 直接傳送到 LINE 群組</a>
+      </div>
+      <div class="modal-btns">
+        <button class="modal-btn modal-cancel" id="shareCloseBtn">關閉</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script>
     const EDIT_PIN = "3701";
-    const STORAGE_KEY = "xlq_15_trip_v17";
+    const STORAGE_KEY = "xlq_15_trip_v18";
 
     const DEFAULT_DATA = {
       activeView: "day1",
@@ -330,341 +361,342 @@
       ],
       day1: [
         {
-          "phase": "行前準備與抵島接洽（10:00 – 11:30）",
-          "time": "10:00",
-          "group": "",
-          "title": "1. 【東港】電話預訂小蝌蚪起司餅（14:00 取）",
-          "note": "於東港預計 10:00 撥打電話預訂小蝌蚪起司餅，預約下午 14:00 取貨。",
-          "lat": 22.4682,
-          "lng": 120.4472
+                "phase": "行前準備與抵島接洽（10:00 – 11:30）",
+                "time": "10:00",
+                "group": "",
+                "title": "1. 【東港】電話預訂小蝌蚪起司餅（14:00 取）",
+                "note": "於東港預計 10:00 撥打電話預訂小蝌蚪起司餅，預約下午 14:00 取貨。",
+                "lat": 22.4682,
+                "lng": 120.4472
         },
         {
-          "phase": "",
-          "time": "11:00－11:30",
-          "group": "",
-          "title": "2. 抵達白沙尾觀光港：接洽車行與民宿",
-          "note": "與車行接洽載行李、領取機車共 8 台，並向民宿確認相關事項（訂購水上活動、晚餐訂位）。",
-          "lat": 22.3522,
-          "lng": 120.3818
+                "phase": "",
+                "time": "11:00－11:30",
+                "group": "",
+                "title": "2. 抵達白沙尾觀光港：接洽車行與民宿",
+                "note": "與車行接洽載行李、領取機車共 8 台，並向民宿確認相關事項（訂購水上活動、晚餐訂位）。",
+                "lat": 22.3522,
+                "lng": 120.3818
         },
         {
-          "phase": "第一階段：全員共同行動（12:00 – 14:15）",
-          "time": "12:00－12:45",
-          "group": "",
-          "title": "3. 小琉球香村滷味麵食館",
-          "note": "午餐時間（45分鐘），12:45 準時出發。",
-          "lat": 22.3456,
-          "lng": 120.3782
+                "phase": "第一階段：全員共同行動（12:00 – 14:15）",
+                "time": "12:00－12:45",
+                "group": "",
+                "title": "3. 小琉球香村滷味麵食館",
+                "note": "午餐時間（45分鐘），12:45 準時出發。",
+                "lat": 22.3456,
+                "lng": 120.3782
         },
         {
-          "phase": "",
-          "time": "12:50－13:10",
-          "group": "",
-          "title": "4. 杉福生態廊道 ＆ 福祿壽囍鯛魚燒",
-          "note": "騎車4分鐘抵達杉福總店外帶鯛魚燒、生態廊道拍照（停留約20分鐘）。",
-          "lat": 22.3418,
-          "lng": 120.3632
+                "phase": "",
+                "time": "12:50－13:10",
+                "group": "",
+                "title": "4. 杉福生態廊道 ＆ 福祿壽囍鯛魚燒",
+                "note": "騎車4分鐘抵達杉福總店外帶鯛魚燒、生態廊道拍照（停留約20分鐘）。",
+                "lat": 22.3418,
+                "lng": 120.3632
         },
         {
-          "phase": "",
-          "time": "13:10－13:25",
-          "group": "",
-          "title": "5. 回「謐之境」民宿放行李＆換裝",
-          "note": "12位獨木舟夥伴優先換好戲水服裝、全員上廁所拿證件，下午一路往北不折返！",
-          "lat": 22.3396,
-          "lng": 120.3665
+                "phase": "",
+                "time": "13:10－13:25",
+                "group": "",
+                "title": "5. 回「謐之境」民宿放行李＆換裝",
+                "note": "12位獨木舟夥伴優先換好戲水服裝、全員上廁所拿證件，下午一路往北不折返！",
+                "lat": 22.3396,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "13:30－13:50",
-          "group": "",
-          "title": "6. 美人沙灘 ＆ 望海亭",
-          "note": "往北騎車4分鐘抵達，居高臨下找海龜拍照，13:50 準時離開前往取餐與分流點。",
-          "lat": 22.3492,
-          "lng": 120.3698
+                "phase": "",
+                "time": "13:30－13:50",
+                "group": "",
+                "title": "6. 美人沙灘 ＆ 望海亭",
+                "note": "往北騎車4分鐘抵達，居高臨下找海龜拍照，13:50 準時離開前往取餐與分流點。",
+                "lat": 22.3492,
+                "lng": 120.3698
         },
         {
-          "phase": "",
-          "time": "14:00－14:15",
-          "group": "",
-          "title": "7. 小蝌蚪起司餅（14:00 取餐）",
-          "note": "往市區／碼頭方向順路領取 10:00 電話預訂的小蝌蚪起司餅，取餐後兩組隨即前往水上活動集合點！",
-          "lat": 22.3508,
-          "lng": 120.3806
+                "phase": "",
+                "time": "14:00－14:15",
+                "group": "",
+                "title": "7. 小蝌蚪起司餅（14:00 取餐）",
+                "note": "往市區／碼頭方向順路領取 10:00 電話預訂的小蝌蚪起司餅，取餐後兩組隨即前往水上活動集合點！",
+                "lat": 22.3508,
+                "lng": 120.3806
         },
         {
-          "phase": "第二階段：14:15 水上活動兩批分流",
-          "time": "14:20－15:10",
-          "group": "A",
-          "title": "8. 🚤 A組：玻璃船（3人｜14:30航班）",
-          "note": "14:20 白沙觀光碼頭 15 號攤位準時報到（必帶證件），14:30 出海航程約 40 分鐘。",
-          "lat": 22.3522,
-          "lng": 120.3818
+                "phase": "第二階段：14:15 水上活動兩批分流",
+                "time": "14:20－15:10",
+                "group": "A",
+                "title": "8. 🚤 A組：玻璃船（3人｜14:30航班）",
+                "note": "14:20 白沙觀光碼頭 15 號攤位準時報到（必帶證件），14:30 出海航程約 40 分鐘。",
+                "lat": 22.3522,
+                "lng": 120.3818
         },
         {
-          "phase": "",
-          "time": "14:30－16:30",
-          "group": "B",
-          "title": "9. 🛶 B組：獨木舟（12人｜15:00場次）",
-          "note": "14:30 抵達集合點報到著裝（12人著裝較久務必準時），15:00 下水開划 ➔ 16:30 上岸。",
-          "lat": 22.3536,
-          "lng": 120.3842
+                "phase": "",
+                "time": "14:30－16:30",
+                "group": "B",
+                "title": "9. 🛶 B組：獨木舟（12人｜15:00場次）",
+                "note": "14:30 抵達集合點報到著裝（12人著裝較久務必準時），15:00 下水開划 ➔ 16:30 上岸。",
+                "lat": 22.3536,
+                "lng": 120.3842
         },
         {
-          "phase": "",
-          "time": "15:15－16:45",
-          "group": "AB",
-          "title": "10. 🚤 A組花瓶岩／夯香魚／龍蝦洞／琉冰 ＆ 🛶 B組獨木舟上岸會合（可停留同行）",
-          "note": "A組（15:15起）：下船後走東岸吃喝拍照（花瓶岩步道潮間帶、夯 日式碳烤香魚、龍蝦洞拍照、琉冰手作冰棒）。B組（16:30上岸）：獨木舟上岸後沖洗換裝，可選擇停留與A組一起吃喝拍照同行，或先回民宿梳洗休息。",
-          "lat": 22.3554,
-          "lng": 120.3812
+                "phase": "",
+                "time": "15:15－16:45",
+                "group": "AB",
+                "title": "10. 🚤 A組花瓶岩／夯香魚／龍蝦洞／琉冰 ＆ 🛶 B組獨木舟上岸會合（可停留同行）",
+                "note": "A組（15:15起）：下船後走東岸吃喝拍照（花瓶岩步道潮間帶、夯 日式碳烤香魚、龍蝦洞拍照、琉冰手作冰棒）。B組（16:30上岸）：獨木舟上岸後沖洗換裝，可選擇停留與A組一起吃喝拍照同行，或先回民宿梳洗休息。",
+                "lat": 22.3554,
+                "lng": 120.3812
         },
         {
-          "phase": "第三階段：全體會合、BBQ晚餐與夜間活動",
-          "time": "17:00－17:45",
-          "group": "",
-          "title": "11. 回「謐之境」民宿梳洗休息、兩組會合",
-          "note": "全員回民宿沖洗換乾爽衣服休息。",
-          "lat": 22.3396,
-          "lng": 120.3665
+                "phase": "第三階段：全體會合、BBQ晚餐與夜間活動",
+                "time": "17:00－17:45",
+                "group": "",
+                "title": "11. 回「謐之境」民宿梳洗休息、兩組會合",
+                "note": "全員回民宿沖洗換乾爽衣服休息。",
+                "lat": 22.3396,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "18:00－19:30",
-          "group": "",
-          "title": "12. 晚餐：家興海鮮碳烤自助吧",
-          "note": "炭火燒烤吃到飽（記得帶現金）。",
-          "lat": 22.3458,
-          "lng": 120.3752
+                "phase": "",
+                "time": "18:00－19:30",
+                "group": "",
+                "title": "12. 晚餐：家興海鮮碳烤自助吧",
+                "note": "炭火燒烤吃到飽（記得帶現金）。",
+                "lat": 22.3458,
+                "lng": 120.3752
         },
         {
-          "phase": "",
-          "time": "20:00 後",
-          "group": "",
-          "title": "13. 夜間自由活動（夜遊導覽／包棟民宿聚會）",
-          "note": "可參加夜間生態導覽、市區逛街或在民宿包棟聚會。",
-          "lat": 22.3495,
-          "lng": 120.3802
+                "phase": "",
+                "time": "20:00 後",
+                "group": "",
+                "title": "13. 夜間自由活動（夜遊導覽／包棟民宿聚會）",
+                "note": "可參加夜間生態導覽、市區逛街或在民宿包棟聚會。",
+                "lat": 22.3495,
+                "lng": 120.3802
         }
-      ],
+],
       day2: [
         {
-          "phase": "上午：水上活動分流（08:15 – 11:15）",
-          "time": "08:30－10:30",
-          "group": "A",
-          "title": "1. 🤿 A組：深潛體驗（6人）",
-          "note": "08:30 報到教學 ➔ 下水體驗 ➔ 約 10:30 上岸沖洗，回「謐之境」換乾衣服。",
-          "lat": 22.3532,
-          "lng": 120.3826
+                "phase": "上午：水上活動分流（08:15 – 11:15）",
+                "time": "08:30－10:30",
+                "group": "A",
+                "title": "1. 🤿 A組：深潛體驗（6人）",
+                "note": "08:30 報到教學 ➔ 下水體驗 ➔ 約 10:30 上岸沖洗，回「謐之境」換乾衣服。",
+                "lat": 22.3532,
+                "lng": 120.3826
         },
         {
-          "phase": "",
-          "time": "08:30－10:00",
-          "group": "B",
-          "title": "2. 🥽 B組：浮潛找海龜（9人）",
-          "note": "08:30 報到著裝 ➔ 下水找海龜 ➔ 約 10:00 上岸沖洗，回「謐之境」換乾衣服。",
-          "lat": 22.3515,
-          "lng": 120.3712
+                "phase": "",
+                "time": "08:30－10:00",
+                "group": "B",
+                "title": "2. 🥽 B組：浮潛找海龜（9人）",
+                "note": "08:30 報到著裝 ➔ 下水找海龜 ➔ 約 10:00 上岸沖洗，回「謐之境」換乾衣服。",
+                "lat": 22.3515,
+                "lng": 120.3712
         },
         {
-          "phase": "中午：午餐與順時針環島景點",
-          "time": "11:30－12:30",
-          "group": "",
-          "title": "3. 午餐：梨小龍 或 相思麵",
-          "note": "11:15 兩組會合出發！若吃相思麵，請 B 組派 2 人 11:10 先去佔位。",
-          "lat": 22.3422,
-          "lng": 120.3745
+                "phase": "中午：午餐與順時針環島景點",
+                "time": "11:30－12:30",
+                "group": "",
+                "title": "3. 午餐：梨小龍 或 相思麵",
+                "note": "11:15 兩組會合出發！若吃相思麵，請 B 組派 2 人 11:10 先去佔位。",
+                "lat": 22.3422,
+                "lng": 120.3745
         },
         {
-          "phase": "",
-          "time": "12:45－13:10",
-          "group": "",
-          "title": "4. 百年老榕樹（＆ 白燈塔）",
-          "note": "樹蔭乘涼拍照，順遊旁邊白色燈塔。",
-          "lat": 22.3338,
-          "lng": 120.3748
+                "phase": "",
+                "time": "12:45－13:10",
+                "group": "",
+                "title": "4. 百年老榕樹（＆ 白燈塔）",
+                "note": "樹蔭乘涼拍照，順遊旁邊白色燈塔。",
+                "lat": 22.3338,
+                "lng": 120.3748
         },
         {
-          "phase": "",
-          "time": "13:15－13:45",
-          "group": "",
-          "title": "5. 厚石魚澳（拍大合照）",
-          "note": "天然礁岩圍成的秘境海灣，15人必拍大合照。",
-          "lat": 22.3268,
-          "lng": 120.3718
+                "phase": "",
+                "time": "13:15－13:45",
+                "group": "",
+                "title": "5. 厚石魚澳（拍大合照）",
+                "note": "天然礁岩圍成的秘境海灣，15人必拍大合照。",
+                "lat": 22.3268,
+                "lng": 120.3718
         },
         {
-          "phase": "",
-          "time": "13:50－14:35",
-          "group": "",
-          "title": "6. 海找冰",
-          "note": "海景第一排吃冰吹海風休息。",
-          "lat": 22.3238,
-          "lng": 120.3665
+                "phase": "",
+                "time": "13:50－14:35",
+                "group": "",
+                "title": "6. 海找冰",
+                "note": "海景第一排吃冰吹海風休息。",
+                "lat": 22.3238,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "14:40－14:50",
-          "group": "",
-          "title": "7. 紅番石",
-          "note": "路邊奇岩合影留念。",
-          "lat": 22.3248,
-          "lng": 120.3618
+                "phase": "",
+                "time": "14:40－14:50",
+                "group": "",
+                "title": "7. 紅番石",
+                "note": "路邊奇岩合影留念。",
+                "lat": 22.3248,
+                "lng": 120.3618
         },
         {
-          "phase": "",
-          "time": "15:00－15:45",
-          "group": "",
-          "title": "8. 小本愛玉 小琉球旗艦店",
-          "note": "必點海龜造型愛玉＋吹冷氣消暑。",
-          "lat": 22.3315,
-          "lng": 120.3622
+                "phase": "",
+                "time": "15:00－15:45",
+                "group": "",
+                "title": "8. 小本愛玉 小琉球旗艦店",
+                "note": "必點海龜造型愛玉＋吹冷氣消暑。",
+                "lat": 22.3315,
+                "lng": 120.3622
         },
         {
-          "phase": "",
-          "time": "15:50－16:45",
-          "group": "",
-          "title": "9. 蛤板灣 威尼斯沙灘",
-          "note": "下午光線最美、貝殼沙灘踩水踏浪。",
-          "lat": 22.3372,
-          "lng": 120.3612
+                "phase": "",
+                "time": "15:50－16:45",
+                "group": "",
+                "title": "9. 蛤板灣 威尼斯沙灘",
+                "note": "下午光線最美、貝殼沙灘踩水踏浪。",
+                "lat": 22.3372,
+                "lng": 120.3612
         },
         {
-          "phase": "傍晚：夕陽海景晚餐",
-          "time": "17:00－17:30",
-          "group": "",
-          "title": "10. 回「謐之境」稍作整理／換穿搭",
-          "note": "補防曬、換美美穿搭準備看夕陽晚餐。",
-          "lat": 22.3396,
-          "lng": 120.3665
+                "phase": "傍晚：夕陽海景晚餐",
+                "time": "17:00－17:30",
+                "group": "",
+                "title": "10. 回「謐之境」稍作整理／換穿搭",
+                "note": "補防曬、換美美穿搭準備看夕陽晚餐。",
+                "lat": 22.3396,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "17:30－19:30",
-          "group": "",
-          "title": "11. 晚餐：Sea Daze Liuqiu 或 餐海館",
-          "note": "17:30 入座看西岸海景夕陽享用晚餐。",
-          "lat": 22.3435,
-          "lng": 120.3642
+                "phase": "",
+                "time": "17:30－19:30",
+                "group": "",
+                "title": "11. 晚餐：Sea Daze Liuqiu 或 餐海館",
+                "note": "17:30 入座看西岸海景夕陽享用晚餐。",
+                "lat": 22.3435,
+                "lng": 120.3642
         }
-      ],
+],
       day3A: [
         {
-          "phase": "🅰️ 方案A：回東港吃海鮮午餐（搭 12:00 或 12:30 船班）",
-          "time": "09:00－09:45",
-          "group": "",
-          "title": "1. 起床整理、退房寄行李",
-          "note": "請民宿載行李至碼頭，身分證／健保卡務必留身上！",
-          "lat": 22.3396,
-          "lng": 120.3665
+                "phase": "🅰️ 方案A：回東港吃海鮮午餐（搭 12:00 或 12:30 船班）",
+                "time": "09:00－09:45",
+                "group": "",
+                "title": "1. 起床整理、退房寄行李",
+                "note": "請民宿載行李至碼頭，身分證／健保卡務必留身上！",
+                "lat": 22.3396,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "09:50－10:25",
-          "group": "",
-          "title": "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
-          "note": "伴手禮第一站取貨與採買。",
-          "lat": 22.3452,
-          "lng": 120.3775
+                "phase": "",
+                "time": "09:50－10:25",
+                "group": "",
+                "title": "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
+                "note": "伴手禮第一站取貨與採買。",
+                "lat": 22.3452,
+                "lng": 120.3775
         },
         {
-          "phase": "",
-          "time": "10:35－11:00",
-          "group": "",
-          "title": "3. 澎坊小琉球白沙港店（免稅店）",
-          "note": "⚠️ 務必於「開船前 1 小時」完成結帳！（12:00船➔11:00前；12:30船➔11:30前）",
-          "lat": 22.3518,
-          "lng": 120.3812
+                "phase": "",
+                "time": "10:35－11:00",
+                "group": "",
+                "title": "3. 澎坊小琉球白沙港店（免稅店）",
+                "note": "⚠️ 務必於「開船前 1 小時」完成結帳！（12:00船➔11:00前；12:30船➔11:30前）",
+                "lat": 22.3518,
+                "lng": 120.3812
         },
         {
-          "phase": "",
-          "time": "11:00－11:30",
-          "group": "",
-          "title": "4. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
-          "note": "購買現烤手撕魷魚與海龜棒棒糖伴手禮。",
-          "lat": 22.3495,
-          "lng": 120.3802
+                "phase": "",
+                "time": "11:00－11:30",
+                "group": "",
+                "title": "4. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
+                "note": "購買現烤手撕魷魚與海龜棒棒糖伴手禮。",
+                "lat": 22.3495,
+                "lng": 120.3802
         },
         {
-          "phase": "",
-          "time": "11:30－12:00",
-          "group": "",
-          "title": "5. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港",
-          "note": "憑身分證件於碼頭免稅提貨處領取商品後登船。",
-          "lat": 22.3522,
-          "lng": 120.3818
+                "phase": "",
+                "time": "11:30－12:00",
+                "group": "",
+                "title": "5. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港",
+                "note": "憑身分證件於碼頭免稅提貨處領取商品後登船。",
+                "lat": 22.3522,
+                "lng": 120.3818
         },
         {
-          "phase": "",
-          "time": "12:30－14:00",
-          "group": "",
-          "title": "6. 東港午餐（華僑市場生魚片黑輪 或 海產餐廳）",
-          "note": "15人聚餐享用東港新鮮海產。",
-          "lat": 22.4645,
-          "lng": 120.4452
+                "phase": "",
+                "time": "12:30－14:00",
+                "group": "",
+                "title": "6. 東港午餐（華僑市場生魚片黑輪 或 海產餐廳）",
+                "note": "15人聚餐享用東港新鮮海產。",
+                "lat": 22.4645,
+                "lng": 120.4452
         }
-      ],
+],
       day3B: [
         {
-          "phase": "🅱️ 方案B：在小琉球吃午餐（搭 14:00 或 14:30 船班）",
-          "time": "09:30－10:30",
-          "group": "",
-          "title": "1. 睡飽起床、退房寄行李",
-          "note": "請民宿載行李至碼頭，身分證／健保卡務必留身上！",
-          "lat": 22.3396,
-          "lng": 120.3665
+                "phase": "🅱️ 方案B：在小琉球吃午餐（搭 14:00 或 14:30 船班）",
+                "time": "09:30－10:30",
+                "group": "",
+                "title": "1. 睡飽起床、退房寄行李",
+                "note": "請民宿載行李至碼頭，身分證／健保卡務必留身上！",
+                "lat": 22.3396,
+                "lng": 120.3665
         },
         {
-          "phase": "",
-          "time": "10:40－11:20",
-          "group": "",
-          "title": "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
-          "note": "伴手禮第一站取貨與採買。",
-          "lat": 22.3452,
-          "lng": 120.3775
+                "phase": "",
+                "time": "10:40－11:20",
+                "group": "",
+                "title": "2. 12花浪捲（取貨）＆ 寶哥麻花捲旗艦店",
+                "note": "伴手禮第一站取貨與採買。",
+                "lat": 22.3452,
+                "lng": 120.3775
         },
         {
-          "phase": "",
-          "time": "11:30－12:30",
-          "group": "",
-          "title": "3. 午餐：白沙碼頭商圈（高記在地小吃／筑安心等）",
-          "note": "在小琉球市區享用在地午餐。",
-          "lat": 22.3502,
-          "lng": 120.3808
+                "phase": "",
+                "time": "11:30－12:30",
+                "group": "",
+                "title": "3. 午餐：白沙碼頭商圈（高記在地小吃／筑安心等）",
+                "note": "在小琉球市區享用在地午餐。",
+                "lat": 22.3502,
+                "lng": 120.3808
         },
         {
-          "phase": "",
-          "time": "12:30－13:00",
-          "group": "",
-          "title": "4. 澎坊小琉球白沙港店（免稅店）",
-          "note": "⚠️ 務必於「開船前 1 小時」完成結帳！（14:00船➔13:00前；14:30船➔13:30前）",
-          "lat": 22.3518,
-          "lng": 120.3812
+                "phase": "",
+                "time": "12:30－13:00",
+                "group": "",
+                "title": "4. 澎坊小琉球白沙港店（免稅店）",
+                "note": "⚠️ 務必於「開船前 1 小時」完成結帳！（14:00船➔13:00前；14:30船➔13:30前）",
+                "lat": 22.3518,
+                "lng": 120.3812
         },
         {
-          "phase": "",
-          "time": "13:00－13:30",
-          "group": "",
-          "title": "5. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
-          "note": "購買現烤手撕魷魚與海龜棒棒糖伴手禮。",
-          "lat": 22.3495,
-          "lng": 120.3802
+                "phase": "",
+                "time": "13:00－13:30",
+                "group": "",
+                "title": "5. 禾豐－手撕魷魚專賣（海龜棒棒糖）中山店",
+                "note": "購買現烤手撕魷魚與海龜棒棒糖伴手禮。",
+                "lat": 22.3495,
+                "lng": 120.3802
         },
         {
-          "phase": "",
-          "time": "13:30－14:00",
-          "group": "",
-          "title": "6. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港",
-          "note": "憑身分證件於碼頭免稅提貨處領取商品後登船返程。",
-          "lat": 22.3522,
-          "lng": 120.3818
+                "phase": "",
+                "time": "13:30－14:00",
+                "group": "",
+                "title": "6. 還機車、領行李、碼頭提領免稅品 ➔ 登船返東港",
+                "note": "憑身分證件於碼頭免稅提貨處領取商品後登船返程。",
+                "lat": 22.3522,
+                "lng": 120.3818
         }
-      ]
+]
     };
 
     let state = loadLocalState();
     let isEditing = false;
     let isUnlocked = false;
+    let pendingAction = null;
     let pickingIndex = null;
     let map, routeLayer, markersLayer;
 
@@ -795,7 +827,7 @@
           const shortTitle = stop.title.replace(/^\d+\.\s*/, "");
           const turtleIcon = L.divIcon({
             className: "",
-            html: `<div class="turtle-wrap"><div class="turtle-badge"><img src="data:image/png;base64,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" alt="騎車位置" /></div><div class="turtle-label">${shortTitle}</div></div>`,
+            html: `<div class="turtle-wrap"><div class="turtle-badge"><img src="data:image/png;base64,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" alt="騎車位置" /></div><div class="turtle-label">${shortTitle}</div></div>`,
             iconSize: [209, 58],
             iconAnchor: [29, 29]
           });
@@ -816,12 +848,27 @@
       });
     }
 
+    function requireAdmin(actionFn, descText = "請輸入管理者權限密碼以進行操作") {
+      if (isUnlocked) {
+        actionFn();
+        return;
+      }
+      pendingAction = actionFn;
+      document.getElementById("pinModalDesc").textContent = descText;
+      document.getElementById("pinInput").value = "";
+      document.getElementById("pinError").textContent = "";
+      document.getElementById("pinModal").classList.add("open");
+      setTimeout(() => document.getElementById("pinInput").focus(), 60);
+    }
+
     function selectStop(idx) {
-      const key = getActiveScheduleKey();
-      if (!key) return;
-      state.currentIndex[key] = idx;
-      saveState(true);
-      renderAll();
+      requireAdmin(() => {
+        const key = getActiveScheduleKey();
+        if (!key) return;
+        state.currentIndex[key] = idx;
+        saveState(true);
+        renderAll();
+      }, "切換目前站點僅限管理者操作，請輸入密碼");
     }
 
     function renderScheduleList() {
@@ -1161,15 +1208,17 @@
     document.getElementById("fitIslandBtn").addEventListener("click", fitIslandView);
 
     document.getElementById("nextStopBtn").addEventListener("click", () => {
-      const key = getActiveScheduleKey();
-      if (!key) return;
-      const list = state[key] || [];
-      if (!list.length) return;
-      state.currentIndex[key] = ((state.currentIndex[key] || 0) + 1) % list.length;
-      saveState(true);
-      renderAll();
-      const activeEl = document.getElementById("activeStopCard");
-      if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      requireAdmin(() => {
+        const key = getActiveScheduleKey();
+        if (!key) return;
+        const list = state[key] || [];
+        if (!list.length) return;
+        state.currentIndex[key] = ((state.currentIndex[key] || 0) + 1) % list.length;
+        saveState(true);
+        renderAll();
+        const activeEl = document.getElementById("activeStopCard");
+        if (activeEl) activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, "「下一站 ➔」僅限管理者操作，請輸入密碼");
     });
 
     document.getElementById("editToggleBtn").addEventListener("click", () => {
@@ -1181,18 +1230,14 @@
         renderAll();
         return;
       }
-      if (isUnlocked) {
+      requireAdmin(() => {
         isEditing = true;
         renderAll();
-      } else {
-        document.getElementById("pinInput").value = "";
-        document.getElementById("pinError").textContent = "";
-        document.getElementById("pinModal").classList.add("open");
-        setTimeout(() => document.getElementById("pinInput").focus(), 60);
-      }
+      }, "請輸入管理者權限密碼以編輯行程");
     });
 
     document.getElementById("pinCancelBtn").addEventListener("click", () => {
+      pendingAction = null;
       document.getElementById("pinModal").classList.remove("open");
     });
 
@@ -1200,9 +1245,14 @@
       const val = document.getElementById("pinInput").value.trim();
       if (val === EDIT_PIN) {
         isUnlocked = true;
-        isEditing = true;
         document.getElementById("pinModal").classList.remove("open");
-        renderAll();
+        const act = pendingAction;
+        pendingAction = null;
+        if (act) {
+          act();
+        } else {
+          renderAll();
+        }
       } else {
         document.getElementById("pinError").textContent = "❌ 密碼錯誤，請重新輸入";
         document.getElementById("pinInput").value = "";
@@ -1213,6 +1263,95 @@
     document.getElementById("pinConfirmBtn").addEventListener("click", verifyPin);
     document.getElementById("pinInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") verifyPin();
+    });
+
+    function getSharePayload() {
+      const url = window.location.href;
+      const key = getActiveScheduleKey();
+      let curStopText = "";
+      if (key && state[key] && state[key].length) {
+        const curIdx = Math.min(state.currentIndex[key] || 0, state[key].length - 1);
+        const stop = state[key][curIdx];
+        const dayMap = { day1: "Day1 (3/19)", day2: "Day2 (3/20)", day3A: "Day3 方案A (3/21)", day3B: "Day3 方案B (3/21)" };
+        curStopText = `
+📍 目前進度（${dayMap[key] || ""}）：${stop.title.replace(/^\d+\.\s*/, "")}`;
+      }
+      const text = `🏝️ 趣小琉球Hi三天兩夜｜即時路線同步地圖${curStopText}
+👉 點擊查看即時行程與導航：`;
+      return { url, text, fullText: `${text}
+${url}` };
+    }
+
+    function openShareModalFallback() {
+      const payload = getSharePayload();
+      const urlInput = document.getElementById("shareUrlInput");
+      const lineLink = document.getElementById("lineShareLink");
+      const modal = document.getElementById("shareModal");
+      if (urlInput) urlInput.value = payload.url;
+      if (lineLink) lineLink.href = `https://line.me/R/msg/text/?${encodeURIComponent(payload.fullText)}`;
+      if (modal) modal.classList.add("open");
+    }
+
+    document.getElementById("shareBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const payload = getSharePayload();
+      const isHttp = /^https?:$/i.test(window.location.protocol);
+      if (isHttp && typeof navigator.share === "function") {
+        try {
+          await navigator.share({
+            title: "趣小琉球Hi三天兩夜｜即時路線同步地圖",
+            text: payload.text,
+            url: payload.url
+          });
+          return;
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+      openShareModalFallback();
+    });
+
+    document.getElementById("copyShareBtn").addEventListener("click", async () => {
+      const payload = getSharePayload();
+      let copied = false;
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(payload.fullText);
+          copied = true;
+        } catch (e) {}
+      }
+      if (!copied) {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = payload.fullText;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          copied = document.execCommand("copy");
+          document.body.removeChild(ta);
+        } catch (e) {}
+      }
+      if (copied) {
+        showToast("✅ 已複製分享連結與行程文字！");
+      } else {
+        const inp = document.getElementById("shareUrlInput");
+        if (inp) { inp.focus(); inp.select(); }
+        showToast("請手動複製下方網址");
+      }
+      document.getElementById("shareModal").classList.remove("open");
+    });
+
+    document.getElementById("shareCloseBtn").addEventListener("click", () => {
+      document.getElementById("shareModal").classList.remove("open");
+    });
+
+    document.getElementById("shareModal").addEventListener("click", (e) => {
+      if (e.target.id === "shareModal") {
+        document.getElementById("shareModal").classList.remove("open");
+      }
     });
 
     initMap();
